@@ -1,0 +1,49 @@
+/* Wrapper styles */
+div.checker-piece {
+  width: 80%;
+  height: 80%;
+  pointer-events: auto;
+  /* Enable events for dragging */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+div.checker-piece.draggable {
+  cursor: grab;
+}
+
+div.checker-piece.draggable:active {
+  cursor: grabbing;
+}
+
+/* Image styles */
+img.checker-piece {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  /* Let clicks pass through to the wrapper/square */
+  display: block;
+}
+
+/* Animation state */
+.checker-piece.animating {
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Jump animation */
+@keyframes jump {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-40px);
+  }
+}
+
+.checker-piece.jumping {
+  animation: jump 0.6s ease-in-out;
+}
