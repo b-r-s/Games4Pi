@@ -1,113 +1,31 @@
 import { useCallback } from 'react';
-import type { BoardState, Move, Player, Position } from '../types/game';
+import { calculateScore } from '../utils/scoring';
+import { MINIMAX_DEPTH, TERMINAL_SCORE } from '../utils/constants';
+import type { BoardState, Move, Player } from '../types/game';
+import { getAllValidMoves, executeMove } from '../utils/gameLogic';
 
-// Helper to check if a position is on the board
-const isValidPos = (row: number, col: number): boolean => {
-  return row >= 0 && row < 8 && col >= 0 && col < 8;
-};
-
-// Helper to get all valid moves for a specific player
-// This duplicates some logic from useGameState, ideally we should refactor to a shared utility
-// But for now, we'll keep it self-contained to avoid circular dependencies or complex refactors
-const getAllValidMoves = (board: BoardState, player: Player): Move[] => {
-  const moves: Move[] = [];
-  const size = 8;
-
-  for (let row = 0; row < size; row++) {
-    for (let col = 0; col < size; col++) {
-      const piece = board[row][col];
-      if (piece && piece.color === player) {
-        const directions = [];
-
-        // Red moves UP (-1), Black moves DOWN (+1)
-        if (piece.color === 'red' || piece.isKing) {
-          directions.push({ row: -1, col: -1 }, { row: -1, col: 1 });
-        }
-        if (piece.color === 'black' || piece.isKing) {
-          directions.push({ row: 1, col: -1 }, { row: 1, col: 1 });
-        }
-
-        directions.forEach((dir) => {
-          const currentPos: Position = { row, col };
-
-          // 1. Simple Move
-          const targetRow = row + dir.row;
-          const targetCol = col + dir.col;
-
-          if (isValidPos(targetRow, targetCol) && board[targetRow][targetCol] === null) {
-            moves.push({
-              from: currentPos,
-              to: { row: targetRow, col: targetCol },
-              isJump: false
-            });
-          }
-
-          // 2. Jump Move
-          const jumpRow = row + dir.row * 2;
-          const jumpCol = col + dir.col * 2;
-
-          if (isValidPos(jumpRow, jumpCol) && board[jumpRow][jumpCol] === null) {
-            const midRow = row + dir.row;
-            const midCol = col + dir.col;
-            const midPiece = board[midRow][midCol];
-
-            if (midPiece && midPiece.color !== piece.color) {
-              moves.push({
-                from: currentPos,
-                to: { row: jumpRow, col: jumpCol },
-                isJump: true,
-                jumpedPiece: { row: midRow, col: midCol }
-              });
-            }
-          }
-        });
-      }
-    }
-  }
-  return moves;
-};
-
-// Evaluate board position for a player
+/*
+  A helper to figure out "how good is this board state for me?"
+  It just subtracts the opponent's score from our score.
+  Positive = Good for us. Negative = Good for them.
+*/
 const evaluateBoard = (board: BoardState, player: Player): number => {
-  let score = 0;
-  const opponent: Player = player === 'red' ? 'black' : 'red';
+  const score = calculateScore(board, player);
+  const opponent = player === 'red' ? 'black' : 'red';
+  const opponentScore = calculateScore(board, opponent);
 
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 8; col++) {
-      const piece = board[row][col];
-      if (!piece) continue;
-
-      if (piece.color === player) {
-        // Base piece value
-        score += piece.isKing ? 5 : 3;
-
-        // Positional bonuses
-        if (!piece.isKing) {
-          // Reward advancement toward opponent's side
-          const advancement = piece.color === 'red' ? (7 - row) : row;
-          score += advancement * 0.5;
-
-          // Bonus for pieces close to kinging
-          if ((piece.color === 'red' && row === 1) || (piece.color === 'black' && row === 6)) {
-            score += 2;
-          }
-        }
-
-        // Center control bonus
-        if (col >= 2 && col <= 5) {
-          score += 0.5;
-        }
-      } else if (piece.color === opponent) {
-        // Subtract opponent's value
-        score -= piece.isKing ? 5 : 3;
-      }
-    }
-  }
-
-  return score;
+  return score.total - opponentScore.total;
 };
 
-// Minimax algorithm with alpha-beta pruning
+/*
+  The Minimax Algorithm!
+  This is how the 'Advanced' AI thinks ahead.
+  It simulates moves, then simulates the opponent's best response, then OUR response to that...
+  down to a certain 'depth' (how many turns ahead).
+  
+  'alpha' and 'beta' are used for pruning - basically, if the AI finds a move that is
+  already worse than a move it found earlier, it stops checking that path to save time.
+*/
 const minimax = (
   board: BoardState,
   depth: number,
@@ -116,66 +34,45 @@ const minimax = (
   maximizingPlayer: boolean,
   player: Player
 ): number => {
+  // Base case: If we've looked far enough ahead, just score the board as it is.
   if (depth === 0) {
     return evaluateBoard(board, player);
   }
 
+  // Whose turn is it in this hypothetical future?
   const currentPlayer = maximizingPlayer ? player : (player === 'red' ? 'black' : 'red');
   const moves = getAllValidMoves(board, currentPlayer);
 
+  // If someone has no moves, the game is over.
   if (moves.length === 0) {
-    // No moves available - game over
-    return maximizingPlayer ? -1000 : 1000;
+    // If maximizing player is stuck, they lose (bad score).
+    // If minimizing player (opponent) is stuck, we win (good score).
+    return maximizingPlayer ? -TERMINAL_SCORE : TERMINAL_SCORE;
   }
 
   if (maximizingPlayer) {
+    // We want the HIGHEST score possible.
     let maxEval = -Infinity;
     for (const move of moves) {
-      const newBoard = board.map(r => [...r]);
-      const piece = newBoard[move.from.row][move.from.col]!;
-      newBoard[move.to.row][move.to.col] = piece;
-      newBoard[move.from.row][move.from.col] = null;
-
-      if (move.isJump && move.jumpedPiece) {
-        newBoard[move.jumpedPiece.row][move.jumpedPiece.col] = null;
-      }
-
-      // Check for kinging
-      if ((piece.color === 'red' && move.to.row === 0) ||
-        (piece.color === 'black' && move.to.row === 7)) {
-        piece.isKing = true;
-      }
-
+      const newBoard = executeMove(board, move);
       const evalScore = minimax(newBoard, depth - 1, alpha, beta, false, player);
       maxEval = Math.max(maxEval, evalScore);
       alpha = Math.max(alpha, evalScore);
 
-      if (beta <= alpha) break; // Alpha-beta pruning
+      // Pruning: If beta <= alpha, the opponent will never let us get here, so stop looking.
+      if (beta <= alpha) break;
     }
     return maxEval;
   } else {
+    // Opponent wants the LOWEST score possible (best for them, worst for us).
     let minEval = Infinity;
     for (const move of moves) {
-      const newBoard = board.map(r => [...r]);
-      const piece = newBoard[move.from.row][move.from.col]!;
-      newBoard[move.to.row][move.to.col] = piece;
-      newBoard[move.from.row][move.from.col] = null;
-
-      if (move.isJump && move.jumpedPiece) {
-        newBoard[move.jumpedPiece.row][move.jumpedPiece.col] = null;
-      }
-
-      // Check for kinging
-      if ((piece.color === 'red' && move.to.row === 0) ||
-        (piece.color === 'black' && move.to.row === 7)) {
-        piece.isKing = true;
-      }
-
+      const newBoard = executeMove(board, move);
       const evalScore = minimax(newBoard, depth - 1, alpha, beta, true, player);
       minEval = Math.min(minEval, evalScore);
       beta = Math.min(beta, evalScore);
 
-      if (beta <= alpha) break; // Alpha-beta pruning
+      if (beta <= alpha) break;
     }
     return minEval;
   }
@@ -187,53 +84,37 @@ export const useAI = () => {
     player: Player,
     difficulty: 'beginner' | 'intermediate' | 'advanced' = 'intermediate'
   ): Move | null => {
+
+    // First, let's see what is actually LEGAL to do.
+    // This function already handles the "Mandatory Jump" rule for us.
     const allMoves = getAllValidMoves(board, player);
 
     if (allMoves.length === 0) {
-      return null;
+      return null; // I guess I'll die.
     }
 
-    // BEGINNER: Completely random
+    // BEGINNER: Pure chaos. Just picks a random move.
     if (difficulty === 'beginner') {
       return allMoves[Math.floor(Math.random() * allMoves.length)];
     }
 
-    // INTERMEDIATE: Prioritize jumps, then random
+    // INTERMEDIATE: Still random, but forces jumps because 'getAllValidMoves' only returns jumps if available.
+    // So it's a "follow the rules but don't think ahead" bot.
     if (difficulty === 'intermediate') {
-      const jumps = allMoves.filter(m => m.isJump);
-      if (jumps.length > 0) {
-        return jumps[Math.floor(Math.random() * jumps.length)];
-      }
       return allMoves[Math.floor(Math.random() * allMoves.length)];
     }
 
-    // ADVANCED: Use minimax algorithm
+    // ADVANCED: The big brain mode.
     if (difficulty === 'advanced') {
       let bestMove: Move | null = null;
       let bestScore = -Infinity;
 
-      // Prioritize jumps first
-      const jumps = allMoves.filter(m => m.isJump);
-      const movesToEvaluate = jumps.length > 0 ? jumps : allMoves;
+      for (const move of allMoves) {
+        // Run a simulation of this move...
+        const newBoard = executeMove(board, move);
 
-      for (const move of movesToEvaluate) {
-        const newBoard = board.map(r => [...r]);
-        const piece = newBoard[move.from.row][move.from.col]!;
-        newBoard[move.to.row][move.to.col] = piece;
-        newBoard[move.from.row][move.from.col] = null;
-
-        if (move.isJump && move.jumpedPiece) {
-          newBoard[move.jumpedPiece.row][move.jumpedPiece.col] = null;
-        }
-
-        // Check for kinging
-        if ((piece.color === 'red' && move.to.row === 0) ||
-          (piece.color === 'black' && move.to.row === 7)) {
-          piece.isKing = true;
-        }
-
-        // Evaluate this move using minimax (depth 3 for good performance)
-        const score = minimax(newBoard, 3, -Infinity, Infinity, false, player);
+        // ...and see several turns into the future.
+        const score = minimax(newBoard, MINIMAX_DEPTH, -Infinity, Infinity, false, player);
 
         if (score > bestScore) {
           bestScore = score;
@@ -241,10 +122,11 @@ export const useAI = () => {
         }
       }
 
-      return bestMove;
+      // If for some reason everything is terrible, just pick the first valid move.
+      return bestMove || allMoves[0];
     }
 
-    // Fallback to intermediate
+    // Default fallback
     return allMoves[Math.floor(Math.random() * allMoves.length)];
   }, []);
 

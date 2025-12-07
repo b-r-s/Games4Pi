@@ -1,3 +1,5 @@
+import type { ScoreBreakdown } from '../utils/scoring';
+
 export type Player = 'red' | 'black';
 
 export interface Piece {
@@ -16,7 +18,8 @@ export interface Move {
   from: Position;
   to: Position;
   isJump: boolean;
-  jumpedPiece?: Position; // Position of the captured piece, if any
+  jumpedPiece?: Position;
+  jumpSequence?: Position[]; // Array of intermediate positions for multi-jumps
 }
 
 export type GameMode = 'PvP' | 'PvAI';
@@ -32,4 +35,18 @@ export interface GameState {
   gameMode: GameMode;
   isAiTurn: boolean;
   aiLevel: AILevel;
+  scores: {
+    red: ScoreBreakdown;
+    black: ScoreBreakdown;
+  };
+  turnStartTime: number;
+  totalTime: {
+    red: number;
+    black: number;
+  };
+  lastAIMove?: {
+    from: Position;
+    to: Position;
+    timestamp: number;
+  };
 }

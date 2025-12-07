@@ -1,24 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import './Board.css';
-import { CheckerPiece } from '../CheckerPiece';
-import { getValidMoves } from '../../hooks/useGameState';
+import { CheckerPieceMemo as CheckerPiece } from '../CheckerPiece';
+import { getValidMovesForPiece } from '../../utils/gameLogic';
 import type { GameState } from '../../types/game';
+import { GameOverModal } from '../GameOver/GameOverModal';
 
 export interface BoardProps {
   gameState: GameState;
   onTileClick: (row: number, col: number) => void;
   onMovePiece: (from: { row: number; col: number }, to: { row: number; col: number }) => void;
+  onRestart: () => void;
+  toastMessage: string | null;
 }
 
-export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiece }) => {
-  const { board, selectedPosition, validMoves } = gameState;
+export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiece, onRestart, toastMessage }) => {
+  const { board, selectedPosition, validMoves, lastAIMove, winner } = gameState;
   const [draggingPos, setDraggingPos] = useState<{ row: number; col: number } | null>(null);
   const [hoveredSquare, setHoveredSquare] = useState<{ row: number; col: number } | null>(null);
   const [pieceHovered, setPieceHovered] = useState<{ row: number; col: number } | null>(null);
   const [hoverValidMoves, setHoverValidMoves] = useState<any[]>([]);
 
+  // Performance optimization: create a Set for O(1) lookup instead of O(n) array.some()
+  const validMoveMap = useMemo(() => {
+    const map = new Set<string>();
+    validMoves.forEach(m => map.add(`${m.to.row},${m.to.col}`));
+    return map;
+  }, [validMoves]);
+
+  const hoverValidMoveMap = useMemo(() => {
+    const map = new Set<string>();
+    hoverValidMoves.forEach(m => map.add(`${m.to.row},${m.to.col}`));
+    return map;
+  }, [hoverValidMoves]);
+
   const onDragStart = (row: number, col: number) => {
-    console.log('[DRAG] onDragStart called for position:', { row, col });
     // Select the piece so valid moves are calculated
     onTileClick(row, col);
     setDraggingPos({ row, col });
@@ -27,7 +42,6 @@ export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiec
   };
 
   const onDrop = (row: number, col: number) => {
-    console.log('[DROP] onDrop called for position:', { row, col }, 'draggingPos:', draggingPos);
     if (draggingPos) {
       // Check if target is a valid move
       const isValid = validMoves.some(
@@ -35,7 +49,6 @@ export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiec
       );
 
       if (isValid) {
-        console.log('[DROP] Moving piece from', draggingPos, 'to', { row, col });
         onMovePiece(draggingPos, { row, col });
       }
     }
@@ -43,31 +56,48 @@ export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiec
     setHoveredSquare(null);
   };
 
+  const onDragEnd = () => {
+    setDraggingPos(null);
+    setHoveredSquare(null);
+    setPieceHovered(null);
+    setHoverValidMoves([]);
+  };
+
   const onDragOver = (e: React.DragEvent, row: number, col: number) => {
-    // Only allow drop if it's a valid move
+    // Always prevent default to allow drop on the element (makes the whole square a drop zone)
+    e.preventDefault();
+
+    // Update hovered square for highlighting
+    if (draggingPos && (hoveredSquare?.row !== row || hoveredSquare?.col !== col)) {
+      setHoveredSquare({ row, col });
+    }
+
     if (draggingPos) {
       const isValid = validMoves.some(
         (move) => move.to.row === row && move.to.col === col && move.from.row === draggingPos.row && move.from.col === draggingPos.col
       );
 
+      // Only show "move" cursor if it's a valid move
       if (isValid) {
-        e.preventDefault(); // Allow drop
         e.dataTransfer.dropEffect = "move";
+      } else {
+        e.dataTransfer.dropEffect = "none";
       }
     }
   };
 
-  const onDragEnter = (row: number, col: number) => {
-    setHoveredSquare({ row, col });
+  const onDragEnter = () => {
+    // We handle hover highlighting in onDragOver for better reliability
   };
 
   const onMouseEnter = (row: number, col: number) => {
     if (!draggingPos) {
       const piece = board[row][col];
+      // Only allow hover effects for the current player's pieces
       if (piece && piece.color === gameState.currentPlayer) {
         setPieceHovered({ row, col });
         // Calculate valid moves for this piece to show hints
-        const moves = getValidMoves(board, piece, { row, col });
+        const moves = getValidMovesForPiece(board, piece, { row, col });
         setHoverValidMoves(moves);
       } else {
         setPieceHovered(null);
@@ -85,6 +115,8 @@ export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiec
 
   return (
     <div className="board-container">
+      {toastMessage && <div className="toast-notification">{toastMessage}</div>}
+      {winner && <GameOverModal winner={winner} onRestart={onRestart} />}
       <div className="checkerboard">
         {board.map((row, rowIndex) =>
           row.map((piece, colIndex) => {
@@ -97,14 +129,10 @@ export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiec
             const isDragSource = draggingPos?.row === rowIndex && draggingPos?.col === colIndex;
 
             // Check if this square is a valid move target for the selected piece
-            const isValidMove = validMoves.some(
-              (move) => move.to.row === rowIndex && move.to.col === colIndex
-            );
+            const isValidMove = validMoveMap.has(`${rowIndex},${colIndex}`);
 
             // Check if this square is a valid move target for the hovered piece
-            const isHoverValidMove = hoverValidMoves.some(
-              (move) => move.to.row === rowIndex && move.to.col === colIndex
-            );
+            const isHoverValidMove = hoverValidMoveMap.has(`${rowIndex},${colIndex}`);
 
             const isCurrentPlayerPiece = piece?.color === gameState.currentPlayer;
 
@@ -118,6 +146,12 @@ export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiec
             // 3. It's the source of the drag (gold border)
             const showGoldBorder = isDragSource || (isValidHovered);
 
+            // Check if this square is part of the last AI move
+            const isAIMoveSquare = lastAIMove && (
+              (lastAIMove.from.row === rowIndex && lastAIMove.from.col === colIndex) ||
+              (lastAIMove.to.row === rowIndex && lastAIMove.to.col === colIndex)
+            );
+
             return (
               <div
                 key={`${rowIndex}-${colIndex}`}
@@ -129,16 +163,16 @@ export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiec
                   ${isSelected ? 'selected' : ''} 
                   ${showGoldBorder ? 'gold-border' : ''}
                   ${isPieceHovered ? 'piece-hovered' : ''}
+                  ${isAIMoveSquare ? 'ai-move-highlight' : ''}
                 `}
                 onClick={() => onTileClick(rowIndex, colIndex)}
                 onDragOver={(e) => onDragOver(e, rowIndex, colIndex)}
                 onDrop={() => onDrop(rowIndex, colIndex)}
-                onDragEnter={() => onDragEnter(rowIndex, colIndex)}
+                onDragEnter={onDragEnter}
                 onMouseEnter={() => onMouseEnter(rowIndex, colIndex)}
                 onMouseLeave={onMouseLeave}
               >
-                {/* Highlight marker for valid moves (either selected or hovered) */}
-                {(isValidMove || (isHoverValidMove && !draggingPos)) && <div className="move-indicator" />}
+                {/* Highlight marker for valid moves (either selected or hovered) handled by CSS ::after */}
 
                 {piece && (
                   <CheckerPiece
@@ -148,6 +182,7 @@ export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiec
                     isSelected={isSelected}
                     draggable={isCurrentPlayerPiece}
                     onDragStart={() => onDragStart(rowIndex, colIndex)}
+                    onDragEnd={onDragEnd}
                   />
                 )}
               </div>

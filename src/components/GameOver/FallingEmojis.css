@@ -1,0 +1,24 @@
+.falling-emojis-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.falling-emoji {
+  position: absolute;
+  top: -50px;
+  font-size: 2rem;
+  /* Animation is applied inline because duration and delay are random */
+}
+
+@keyframes fall {
+  to {
+    transform: translateY(110vh) rotate(360deg);
+    opacity: 0;
+  }
+}

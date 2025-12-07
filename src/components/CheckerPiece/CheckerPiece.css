@@ -47,3 +47,18 @@ img.checker-piece {
 .checker-piece.jumping {
   animation: jump 0.6s ease-in-out;
 }
+
+.checker-piece.selected {
+  box-shadow: 0 0 15px 5px rgba(255, 215, 0, 0.6);
+  z-index: 20;
+}
+
+.drag-ghost {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  width: 80px;
+  height: 80px;
+  opacity: 1;
+  pointer-events: none;
+}

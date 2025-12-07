@@ -1,3 +1,4 @@
+import React, { useRef } from 'react';
 import type { FC } from 'react';
 import './CheckerPiece.css';
 
@@ -23,12 +24,14 @@ export const CheckerPiece: FC<CheckerPieceProps> = ({
   onMouseEnter,
   onMouseLeave,
 }) => {
-  // Select the appropriate SVG based on color and king status
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // Select the appropriate PNG based on color and king status
   const getPieceImage = () => {
     if (isKing) {
-      return color === 'red' ? '/Red_King.svg' : '/Black_King.svg';
+      return color === 'red' ? '/RedKing.png' : '/BlackKing.png';
     }
-    return color === 'red' ? '/checker-red.svg' : '/checker-black.svg';
+    return color === 'red' ? '/RedChecker.png' : '/BlackChecker.png';
   };
 
   const pieceImage = getPieceImage();
@@ -41,47 +44,21 @@ export const CheckerPiece: FC<CheckerPieceProps> = ({
   ].filter(Boolean).join(' ');
 
   const handleDragStart = (e: React.DragEvent) => {
-    console.log('[PIECE DRAG START] Color:', color, 'isKing:', isKing, 'draggable:', draggable);
-
-    // Create a custom drag image to avoid the "3 pieces" issue
-    const canvas = document.createElement('canvas');
-    canvas.width = 80;
-    canvas.height = 80;
-    const ctx = canvas.getContext('2d');
-
-    if (ctx) {
-      // Draw a simple circle to represent the piece
-      ctx.fillStyle = color === 'red' ? '#ef4444' : '#4b5563';
-      ctx.beginPath();
-      ctx.arc(40, 40, 35, 0, 2 * Math.PI);
-      ctx.fill();
-
-      // Draw crown indicator if king
-      if (isKing) {
-        ctx.fillStyle = '#FFD700';
-        ctx.font = 'bold 30px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('♔', 40, 40);
+    // Use the hidden drag image element for a clean drag preview
+    if (imgRef.current) {
+      try {
+        // Set drag image with offset at center (40x40 is approx center of 80x80 piece)
+        e.dataTransfer.setDragImage(imgRef.current, 40, 40);
+      } catch (err) {
+        // Silently fail if drag image can't be set - browser will use default
       }
-
-      console.log('[PIECE DRAG START] Custom drag image created');
-    } else {
-      console.error('[PIECE DRAG START] Failed to get canvas context!');
     }
 
-    try {
-      e.dataTransfer.setDragImage(canvas, 40, 40);
-      console.log('[PIECE DRAG START] Drag image set successfully');
-    } catch (err) {
-      console.error('[PIECE DRAG START] Error setting drag image:', err);
-    }
+    // Set drag effect
+    e.dataTransfer.effectAllowed = 'move';
 
     if (onDragStart) {
       onDragStart(e);
-      console.log('[PIECE DRAG START] Called parent onDragStart');
-    } else {
-      console.warn('[PIECE DRAG START] No onDragStart handler provided!');
     }
   };
 
@@ -91,10 +68,37 @@ export const CheckerPiece: FC<CheckerPieceProps> = ({
       draggable={draggable}
       onDragStart={draggable ? handleDragStart : undefined}
       onDragEnd={draggable ? onDragEnd : undefined}
-      onMouseEnter={draggable ? onMouseEnter : undefined}
-      onMouseLeave={draggable ? onMouseLeave : undefined}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
-      <img src={pieceImage} alt={`${color} ${isKing ? 'king' : 'checker'}`} className="checker-piece" />
+      {/* Visible piece */}
+      <img
+        src={pieceImage}
+        alt={`${color} ${isKing ? 'king' : 'checker'}`}
+        className="checker-piece"
+        draggable={false}
+      />
+
+      {/* Hidden image for drag ghost - preloaded and clean */}
+      <img
+        ref={imgRef}
+        src={pieceImage}
+        alt="drag-ghost"
+        className="drag-ghost"
+      />
     </div>
   );
-};  
+};
+
+// Memoize the component to prevent unnecessary re-renders
+// Only re-render if the piece's actual properties change
+export const CheckerPieceMemo = React.memo<CheckerPieceProps>(CheckerPiece, (prev, next) => {
+  return (
+    prev.color === next.color &&
+    prev.isKing === next.isKing &&
+    prev.isSelected === next.isSelected &&
+    prev.draggable === next.draggable &&
+    prev.position.row === next.position.row &&
+    prev.position.col === next.position.col
+  );
+});
