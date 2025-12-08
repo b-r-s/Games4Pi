@@ -224,7 +224,6 @@ export const useGameState = () => {
 
             const elapsed = Date.now() - prev.turnStartTime;
             const winner = checkGameOver(newBoard);
-
             return {
               ...prev,
               board: newBoard,
@@ -251,7 +250,7 @@ export const useGameState = () => {
 
       return () => clearTimeout(timer);
     }
-  }, [gameState.currentPlayer, gameState.gameMode, gameState.winner, gameState.isAiTurn, getBestMove, updateScores]);
+  }, [gameState.currentPlayer, gameState.gameMode, gameState.winner, getBestMove, updateScores]);
 
   /*
     Handles all user interactions with the board squares.
