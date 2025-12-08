@@ -104,6 +104,17 @@ export const useGameState = () => {
     }));
   }, [updateScores]);
 
+  // Clear the AI move highlight after the animation completes (1s animation + buffer)
+  useEffect(() => {
+    if (gameState.lastAIMove) {
+      const timer = setTimeout(() => {
+        setGameState(prev => ({ ...prev, lastAIMove: undefined }));
+      }, 1200); // Slightly longer than the 1s animation
+
+      return () => clearTimeout(timer);
+    }
+  }, [gameState.lastAIMove]);
+
   /*
     SHARED LOGIC: This is the heart of move execution, used by both click and drag-drop.
     We extracted this to avoid ~120 lines of duplication.
