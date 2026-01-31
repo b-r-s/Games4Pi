@@ -1,18 +1,31 @@
 /* Global Styles */
 :root {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
+  --bg-dark: #33124e;
+  --bg-medium: #5f2c89;
+  --bg-light: #c28ded;
+
+  --amethyst: #4D2A7A;
+  --sunlight-gold: #FFD700;
+
+  --bg-blue: #170c82;
+  /* #not used */
+
+  --border-dark: #ee6705;
+  --border-medium: #ec8236;
+  --border-light: #f6934c;
+
   --bg-gradient-start: #0f172a;
   --bg-gradient-mid: #581c87;
   --bg-gradient-end: #0f172a;
 
-  --text-primary: #ffffff;
-  --text-secondary: #cbd5e1;
-  --text-blue: #3b82f6;
+  --text-primary: #F8FAFC;
 
-  --accent-primary: #9333ea;
-  --accent-hover: #7e22ce;
-  --btn-border: #d1a630;
+
+  --accent-dark: #56df00;
+  --accent-medium: #5bc441;
+  --accent-light: #92ef7a;
+
+  --button-bg: var(--accent-dark);
 
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
@@ -20,7 +33,7 @@
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 1rem;
-  
+
   /* Board color variables - defaults */
   --board-light: #ffffff;
   --board-dark: #3b82f6;
@@ -38,12 +51,14 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-mid), var(--bg-gradient-end));
-  color: var(--text-primary);
+  /*   background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-mid), var(--bg-gradient-end)); */
+  /*   color: var(--text-primary); */
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
   touch-action: pan-y;
+  background-color: var(--bg-dark);
+  overflow-y: hidden;
 }
 
 code {

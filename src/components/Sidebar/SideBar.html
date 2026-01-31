@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sidebar Preview</title>
+  <link rel="stylesheet" href="./Sidebar.css">
+</head>
+
+<body style="background-color:green">
+  <div>
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab active">Stats</button>
+      <button class="sidebar-tab">AI</button>
+      <button class="sidebar-tab">Pieces</button>
+      <button class="sidebar-tab">Board</button>
+      <button class="play-again-overlay-btn">Play Again</button>
+    </div>
+    <div class="sidebar-content">
+      <div class="sidebar-header-with-logo">
+        <div class="sidebar-title-group">
+          <img src="logo-placeholder.png" alt="Logo" class="sidebar-logo" />
+          <h2 class="sidebar-title">Current Match</h2>
+        </div>
+        <div class="tooltip-container">
+          <button class="btn-new-game-mini">🔄 New</button> <span class="sidebar-tooltip">Start a fresh match</span>
+        </div>
+      </div>
+      <div class="match-stats-container">
+        <div class="player-score-card active">
+          <div class="card-header"> <span class="player-name"> <span class="color-indicator color-red"></span> <span
+                class="text-red">Classic (You)</span> <span class="animate-pulse">⏱️</span> </span>
+          </div>
+          <div class="sidebar-stat-breakdown">
+            <div class="sidebar-stat tooltip-container"> <span class="sidebar-stat-label">Material</span> <span
+                class="sidebar-stat-value">12</span> <span class="sidebar-tooltip">Sum of all your pieces (regular = 3,
+                king = 5).</span>
+            </div>
+            <div class="sidebar-stat tooltip-container"> <span class="sidebar-stat-label">Power</span> <span
+                class="sidebar-stat-value">5</span> <span class="sidebar-tooltip">Total value of your kings (each king =
+                5).</span>
+            </div>
+            <div class="sidebar-stat tooltip-container"> <span class="sidebar-stat-label">Strategy</span> <span
+                class="sidebar-stat-value">8</span> <span class="sidebar-tooltip">Mobility, advancement, center control,
+                etc.</span>
+            </div>
+            <div class="sidebar-stat tooltip-container"> <span class="sidebar-stat-label">Moves</span> <span
+                class="sidebar-stat-value">4</span> <span class="sidebar-tooltip">Total moves made.</span>
+            </div>
+            <div class="sidebar-stat tooltip-container"> <span class="sidebar-stat-label">Total</span> <span
+                class="sidebar-stat-value">25</span> <span class="sidebar-tooltip">Sum of Material, Power, and
+                Strategy.</span>
+            </div>
+          </div>
+          <div class="timer-row"> <span>Move: 0:15</span> <span>Total: 1:24</span>
+          </div>
+        </div>
+        <div class="player-score-card">
+          <div class="card-header"> <span class="player-name"> <span class="color-indicator color-black"></span> <span
+                class="text-black">Black (AI)</span> <span class="ai-difficulty-label">Intermediate</span> </span>
+          </div>
+          <div class="sidebar-stat-breakdown">
+            <div class="sidebar-stat"><span class="sidebar-stat-label">Total</span><span
+                class="sidebar-stat-value">22</span>
+            </div>
+          </div>
+          <div class="timer-row"> <span>Move: --:--</span> <span>Total: 0:45</span>
+          </div>
+        </div>
+      </div>
+      <div class="tooltip-container">
+        <button class="undo-move-btn">⟲ Undo Move</button> <span class="sidebar-tooltip">Undo the last move</span>
+      </div>
+      <hr />
+    </div>
+  </div>
+</body>
+
+</html>

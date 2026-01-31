@@ -1,22 +1,29 @@
+/* Game Over Modal Styles */
+
+.play-again-btn {
+  /* Placeholder for potential specific overrides if needed */
+}
+
 .gameover-stats-player-label,
 .gameover-stats-row {
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
 }
+
 .game-over-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.45);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px);
   animation: fadeIn 0.3s ease-out;
   transition: opacity 0.5s ease-out;
 }
@@ -27,13 +34,15 @@
 }
 
 .game-over-content {
-  background-color: #1a1a1a;
+  background-color: #2d1b4e;
+  /* Dark Amethyst */
   padding: 2rem 4rem;
   border-radius: 16px;
-  border: 1px solid #333;
+  border: 2px solid var(--sunlight-gold);
   text-align: center;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 215, 0, 0.2);
   transform: scale(1);
+  color: #fff;
   animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -44,14 +53,15 @@
   -webkit-background-clip: text;
   color: transparent;
   font-weight: 800;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .game-over-title.red {
-  background-image: linear-gradient(to right, #ef4444, #b91c1c);
+  background-image: linear-gradient(to right, #ef4444, #ff8c00);
 }
 
 .game-over-title.black {
-  background-image: linear-gradient(to right, #9ca3af, #4b5563);
+  background-image: linear-gradient(to right, #9ca3af, #e5e7eb);
 }
 
 .game-over-title.draw {
@@ -59,7 +69,7 @@
 }
 
 .game-over-message {
-  color: #9ca3af;
+  color: #e5e7eb;
   margin-bottom: 2rem;
   font-size: 1.2rem;
 }
@@ -70,40 +80,87 @@
   gap: 1.2rem;
   margin: 1.5rem 0 0 0;
 }
+
 .gameover-stats-row {
   display: flex;
   align-items: flex-end;
   gap: 2.5rem;
   justify-content: center;
 }
+
 .gameover-stats-player-label {
   font-weight: bold;
   font-size: 1.1rem;
   min-width: 60px;
   text-align: right;
   margin-right: 0.5rem;
+  color: var(--sunlight-gold);
 }
+
 .gameover-stat {
   display: flex;
   flex-direction: column;
   align-items: center;
   min-width: 70px;
+  position: relative;
+  /* Anchor for tooltips */
 }
+
 .gameover-stat-label {
   font-size: 1rem;
   font-weight: 500;
-  color: #e5e7eb;
+  color: #d1d5db;
   margin-bottom: 0.2rem;
   cursor: help;
 }
+
 .gameover-stat-value {
   font-size: 1.3rem;
   font-weight: bold;
   color: #fff;
-  background: #222;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 6px;
   padding: 0.15em 0.7em;
   margin-bottom: 0.1em;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+/* Standardized Tooltip Styles */
+.tooltip-container {
+  position: relative;
+  cursor: help;
+}
+
+.sidebar-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  display: flex;
+  flex-wrap: wrap;
+  width: max-content;
+  min-width: 120px;
+  max-width: 200px;
+  background: #111;
+  color: #fff;
+  text-align: center;
+  border: 1px solid var(--sunlight-gold);
+  border-radius: 8px;
+  padding: 8px 12px;
+  position: absolute;
+  z-index: 100;
+  left: 50%;
+  bottom: 125%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  line-height: 1.2;
+  pointer-events: none;
+  transition: opacity 0.15s, transform 0.15s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.tooltip-container:hover .sidebar-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(-2px);
 }
 
 
@@ -111,24 +168,25 @@
   padding: 0.75rem 2rem;
   font-size: 1.2rem;
   font-weight: 600;
-  background-color: #2563eb;
-  color: white;
+  background-color: var(--sunlight-gold);
+  color: #2d1b4e;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
   animation: buttonFadeIn 0.5s ease-out;
 }
 
 .play-again-btn:hover {
-  background-color: #1d4ed8;
+  background-color: #ffd700;
+  filter: brightness(1.1);
   transform: translateY(-2px);
-  box-shadow: 0 6px 12px -2px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 6px 12px -2px rgba(255, 215, 0, 0.3);
 }
 
 .play-again-btn:active {
-  background-color: #2563eb;
+  background-color: #e6c200;
 }
 
 @keyframes fadeIn {

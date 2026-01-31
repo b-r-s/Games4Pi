@@ -1,11 +1,12 @@
 .gameplay-instructions-container {
-  background: rgba(30, 41, 59, 0.95);
-  color: #f3f4f6;
-  border-radius: 16px;
+  border: 2px solid var(--border-dark);
+  border-radius: var(--radius-lg);
   padding: 2rem 2.5rem;
   max-width: 810px;
-  margin: 2rem auto;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  width: max-content;
+  max-height: 80vh;
+  margin: 2vh auto auto auto;
+  background-color: var(--bg-medium);
   font-family: inherit;
 }
 
@@ -15,7 +16,7 @@
   margin-top: -5vh;
   font-size: 2rem;
   font-weight: 700;
-  color: #38bdf8;
+  color: var(--text-primary);
   width: 90%;
 }
 
@@ -23,20 +24,23 @@
   list-style: none;
   padding: 0;
   margin: 0;
+  max-height: 58vh;
+  overflow-y: auto;
 }
 
 .gameplay-instruction-item {
   margin-bottom: 1.1rem;
-  font-size: 1Rem;
-  background: rgba(51, 65, 85, 0.7);
+  font-size: 1rem;
+  color: var(--text-primary);
+  /*   background: rgba(51, 65, 85, 0.7); */
   border-radius: 8px;
   padding: 0.7rem 1rem;
   line-height: 1.3;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  /*   box-shadow: 0 2px 8px rgba(0,0,0,0.07); */
 }
 
 .gameplay-instruction-item strong {
-  color: #fbbf24;
+  /*   color: #fbbf24; */
   font-weight: 600;
 }
 
@@ -50,4 +54,9 @@
 
 .instruction-paragraph:last-child {
   margin-bottom: 0;
+}
+
+.instructions-actions {
+  text-align: center;
+  margin-top: 1.5rem;
 }

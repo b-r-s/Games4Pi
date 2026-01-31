@@ -10,7 +10,7 @@
   margin-top: 9.6vw;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
-  gap: 0;
+  gap: 2px;
   width: 40vw;
   aspect-ratio: 1;
   height: 40vw;
@@ -41,7 +41,7 @@
   /* blue squares */
 }
 
-v
+
 
 /* Prevent any hover effects on non-interactive squares */
 .board-square.dark:not(.valid-move):not(.hover-valid-move) {
@@ -50,11 +50,11 @@ v
 
 .board-square.valid-move {
   cursor: pointer;
-  box-shadow: inset 0 0 20px rgba(147, 51, 234, 0.5);
+  /*   box-shadow: inset 0 0 20px rgba(147, 51, 234, 0.5); */
 }
 
 .board-square.hover-valid-move {
-  box-shadow: inset 0 0 15px rgba(147, 51, 234, 0.3);
+  /*   box-shadow: inset 0 0 15px rgba(147, 51, 234, 0.3); */
 }
 
 .board-square.valid-move::after,
@@ -63,7 +63,7 @@ v
   position: absolute;
   width: 30%;
   height: 30%;
-  background-color: rgba(255, 255, 255);
+  /*   background-color: rgba(255, 255, 255); */
   border-radius: 50%;
   animation: pulse 1.5s ease-in-out infinite;
   pointer-events: none;
@@ -73,22 +73,22 @@ v
 /* Removed .move-indicator rule as it's no longer used */
 
 .board-square.selected {
-  box-shadow: inset 0 0 30px rgba(251, 191, 36, 0.8);
+  /*   box-shadow: inset 0 0 30px rgba(251, 191, 36, 0.8); */
 }
 
 .board-square.gold-border {
   /* Use outline to sit outside/on top of box-shadows without overriding them */
-  outline: 4px solid #FFD700;
+  /*   outline: 4px solid #FFD700; */
   outline-offset: -4px;
   z-index: 10;
 }
 
 .board-square.piece-hovered {
-  filter: brightness(1.1);
+  /*   filter: brightness(1.1); */
 }
 
 .board-square.hover-glow {
-  box-shadow: inset 0 0 25px rgba(74, 222, 128, 0.7);
+  /*   box-shadow: inset 0 0 25px rgba(74, 222, 128, 0.7); */
   animation: glow-pulse 1.2s ease-in-out infinite;
 }
 
@@ -96,11 +96,11 @@ v
 
   0%,
   100% {
-    box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.5);
+    /*     box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.5); */
   }
 
   50% {
-    box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.9);
+    /*     box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.9); */
   }
 }
 
@@ -134,7 +134,7 @@ v
 
 /* AI Jump Trail - Captured Squares (Explosion + Scorch Mark) */
 .board-square.ai-trail-captured {
-  outline: 4px solid #ef4444 !important;
+  /*   outline: 4px solid #ef4444 !important; */
   outline-offset: -4px;
   z-index: 9;
 }
@@ -223,7 +223,9 @@ v
   z-index: 5;
   opacity: 0.9;
   background-repeat: no-repeat;
-  background-size: 100% 100%;
+  background-image: var(--trail-gradients);
+  background-size: var(--trail-sizes, 100% 100%);
+  background-position: var(--trail-positions);
 }
 
 /* If a square has BOTH, we'll handle it via an extra class or multiple backgrounds in inline style if needed, 
@@ -259,7 +261,7 @@ v
   pointer-events: none;
   z-index: 8;
   animation: jump-hint-pulse 1s ease-in-out infinite;
-  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
+  /*   filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8)); */
 }
 
 @keyframes jump-hint-pulse {
@@ -282,22 +284,22 @@ v
   25%,
   50%,
   75% {
-    border: 5px solid #00ff00;
+    /*     border: 5px solid #00ff00; */
     /* Bright Green */
-    box-shadow: 0 0 20px #00ff00, inset 0 0 20px rgba(0, 255, 0, 0.3);
+    /*     box-shadow: 0 0 20px #00ff00, inset 0 0 20px rgba(0, 255, 0, 0.3); */
   }
 
   12.5%,
   37.5%,
   62.5%,
   87.5% {
-    border: 5px solid transparent;
-    box-shadow: none;
+    /*     border: 5px solid transparent; */
+    /*     box-shadow: none; */
   }
 
   100% {
-    border: 5px solid transparent;
-    box-shadow: none;
+    /*     border: 5px solid transparent; */
+    /*     box-shadow: none; */
   }
 }
 
@@ -322,13 +324,33 @@ v
   37.5%,
   62.5%,
   87.5% {
-    border: 5px solid transparent;
-    box-shadow: none;
+    /*     border: 5px solid transparent; */
+    /*     box-shadow: none; */
   }
 
   100% {
     border: 5px solid transparent;
     box-shadow: none;
+  }
+}
+
+/* Forced Jump Highlight */
+.board-square.jump-available {
+  animation: jump-available-pulse 1.5s ease-in-out infinite;
+  z-index: 12;
+}
+
+@keyframes jump-available-pulse {
+
+  0%,
+  100% {
+    box-shadow: inset 0 0 10px rgba(255, 69, 0, 0.5);
+    border: 2px solid rgba(255, 69, 0, 0.6);
+  }
+
+  50% {
+    box-shadow: inset 0 0 30px rgba(255, 69, 0, 0.8);
+    border: 4px solid rgba(255, 69, 0, 1);
   }
 }
 
@@ -338,13 +360,14 @@ v
   top: 10%;
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.85);
-  color: white;
+  background-color: var(--amethyst);
+  color: var(--sunlight-gold);
+  border: 2px solid var(--sunlight-gold);
   padding: 12px 24px;
   border-radius: 8px;
   font-size: 1.1rem;
   z-index: 2000;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
   pointer-events: none;
   animation: fadeInOut 3s ease-in-out forwards;
   text-align: center;
@@ -389,11 +412,13 @@ v
     width: 85vw;
     height: 85vw;
     margin-top: 0.5rem;
-    /* border-width: 10px;
+    /* border-width: 10px; */
+    /*
     box-shadow: 0 6px 0 #0a0f1a,
-      0 12px 0 #0f172a,
-      0 18px 0 #1a1f2e,
-      0 30px 40px rgba(0, 0, 0, 0.7); */
+    0 12px 0 #0f172a,
+    0 18px 0 #1a1f2e,
+    0 30px 40px rgba(0, 0, 0, 0.7);
+    */
   }
 
   .board-square.valid-move::after,
@@ -414,11 +439,13 @@ v
     width: 92vw;
     height: 92vw;
     margin-top: 0.25rem;
-    /* border-width: 8px;
+    /* border-width: 8px; */
+    /*
     box-shadow: 0 4px 0 #0a0f1a,
-      0 8px 0 #0f172a,
-      0 12px 0 #1a1f2e,
-      0 20px 30px rgba(0, 0, 0, 0.7); */
+    0 8px 0 #0f172a,
+    0 12px 0 #1a1f2e,
+    0 20px 30px rgba(0, 0, 0, 0.7);
+    */
   }
 
   .board-square.valid-move::after,
@@ -447,21 +474,21 @@ v
     25%,
     50%,
     75% {
-      border: 3px solid #00ff00;
-      box-shadow: 0 0 15px #00ff00, inset 0 0 15px rgba(0, 255, 0, 0.3);
+      /*       border: 3px solid #00ff00; */
+      /*       box-shadow: 0 0 15px #00ff00, inset 0 0 15px rgba(0, 255, 0, 0.3); */
     }
 
     12.5%,
     37.5%,
     62.5%,
     87.5% {
-      border: 3px solid transparent;
-      box-shadow: none;
+      /*       border: 3px solid transparent; */
+      /*       box-shadow: none; */
     }
 
     100% {
-      border: 3px solid transparent;
-      box-shadow: none;
+      /*       border: 3px solid transparent; */
+      /*       box-shadow: none; */
     }
   }
 }
@@ -473,7 +500,7 @@ v
   }
 
   .board-square.valid-move:active {
-    background-color: rgba(147, 51, 234, 0.15);
+    /*     background-color: rgba(147, 51, 234, 0.15); */
   }
 
   .board-square:active {

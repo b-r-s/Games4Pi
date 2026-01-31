@@ -43,9 +43,9 @@ export const FallingEmojis = () => {
           key={emoji.id}
           className="falling-emoji"
           style={{
-            left: `${emoji.left}%`,
-            animation: `fall ${emoji.animationDuration}s linear ${emoji.delay}s 1 forwards`
-          }}
+            '--emoji-left': `${emoji.left}%`,
+            '--emoji-animation': `fall ${emoji.animationDuration}s linear ${emoji.delay}s 1 forwards`
+          } as React.CSSProperties}
         >
           {emoji.char}
         </div>

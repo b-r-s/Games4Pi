@@ -85,8 +85,9 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({ winner, scores, pl
                 {COLOR_THEME_LABELS[playerColor]} (You)
               </div>
               {STAT_KEYS.map((key) => (
-                <div className="gameover-stat" key={key}>
-                  <span className="gameover-stat-label" title={STAT_LABELS[key].tooltip}>{STAT_LABELS[key].name}</span>
+                <div className="gameover-stat tooltip-container" key={key}>
+                  <span className="gameover-stat-label">{STAT_LABELS[key].name}</span>
+                  <span className="sidebar-tooltip">{STAT_LABELS[key].tooltip}</span>
                   <span className="gameover-stat-value">{scores.red[key].toFixed(0)}</span>
                 </div>
               ))}
@@ -96,8 +97,9 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({ winner, scores, pl
                 Black (AI)
               </div>
               {STAT_KEYS.map((key) => (
-                <div className="gameover-stat" key={key}>
-                  <span className="gameover-stat-label" title={STAT_LABELS[key].tooltip}>{STAT_LABELS[key].name}</span>
+                <div className="gameover-stat tooltip-container" key={key}>
+                  <span className="gameover-stat-label">{STAT_LABELS[key].name}</span>
+                  <span className="sidebar-tooltip">{STAT_LABELS[key].tooltip}</span>
                   <span className="gameover-stat-value">{scores.black[key].toFixed(0)}</span>
                 </div>
               ))}

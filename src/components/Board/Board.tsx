@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import './Board.css';
 import { CheckerPieceMemo as CheckerPiece } from '../CheckerPiece';
-import { getValidMovesForPiece } from '../../utils/gameLogic';
+import { getValidMovesForPiece, getAllValidMoves } from '../../utils/gameLogic';
 import type { GameState, PlayerColorTheme } from '../../types/game';
 import { GameOverModal } from '../GameOver/GameOverModal';
 import { AdvantageBar } from '../AdvantageBar';
+import { BattleEffects } from '../BattleEffects/BattleEffects';
+import type { BattleEffectsProps } from '../BattleEffects/BattleEffects';
 
 export interface BoardProps {
   gameState: GameState;
@@ -25,6 +27,7 @@ export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiec
   const [hoverValidMoves, setHoverValidMoves] = useState<any[]>([]);
   const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [activeEffects, setActiveEffects] = useState<BattleEffectsProps[]>([]);
 
   // Show modal when game ends
   React.useEffect(() => {
@@ -45,6 +48,45 @@ export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiec
     }
   }, [lastUndoMove, onClearUndoHighlight]);
 
+  // Handle Human Move Effects (Explosions)
+  React.useEffect(() => {
+    if (gameState.lastHumanMove) {
+      const { capturedSquares } = gameState.lastHumanMove;
+      const newEffects: BattleEffectsProps[] = [];
+
+      capturedSquares.forEach(pos => {
+        // Calculate pixel position relative to the board container
+        const squareEl = document.querySelector(`[data-position="${pos.row}-${pos.col}"]`);
+        if (squareEl) {
+          const rect = squareEl.getBoundingClientRect();
+          const boardEl = document.querySelector('.checkerboard');
+          const boardRect = boardEl?.getBoundingClientRect();
+
+          if (boardRect) {
+            const x = rect.left - boardRect.left + (rect.width / 2);
+            const y = rect.top - boardRect.top + (rect.height / 2);
+            newEffects.push({
+              activeEffect: 'explosion',
+              position: { x, y },
+              variant: 'gold',
+              onComplete: () => removeFromActiveEffects() // Simple identifier
+            });
+          }
+        }
+      });
+
+      if (newEffects.length > 0) {
+        setActiveEffects(prev => [...prev, ...newEffects]);
+      }
+    }
+  }, [gameState.lastHumanMove]);
+
+  const removeFromActiveEffects = () => {
+    // Logic to remove effect from state to avoid memory leaks/clutter
+    // Since function equality might be tricky, maybe just don't worry about strict identification for now or use timestamp
+    setActiveEffects(prev => prev.slice(1)); // Simple FIFO removal or similar
+  };
+
   // Performance optimization: create a Set for O(1) lookup instead of O(n) array.some()
   const validMoveMap = useMemo(() => {
     const map = new Set<string>();
@@ -57,6 +99,25 @@ export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiec
     hoverValidMoves.forEach(m => map.add(`${m.to.row},${m.to.col}`));
     return map;
   }, [hoverValidMoves]);
+
+  // Logic to highlight pieces that MUST jump
+  const forcedJumpPositions = useMemo(() => {
+    const map = new Set<string>();
+    // Only show hints for human player when it's their turn and they haven't selected a piece yet
+    if (gameState.currentPlayer === 'red' && !gameState.winner && !gameState.isAiTurn) {
+      const allMoves = getAllValidMoves(board, 'red');
+      const mustJump = allMoves.some(m => m.isJump);
+
+      if (mustJump) {
+        allMoves.forEach(m => {
+          if (m.isJump) {
+            map.add(`${m.from.row},${m.from.col}`);
+          }
+        });
+      }
+    }
+    return map;
+  }, [gameState.currentPlayer, board, gameState.winner, gameState.isAiTurn]);
 
   // AI Jump Trail lookup Sets for O(1) performance
   const aiTrailStartKey = useMemo(() => {
@@ -376,6 +437,9 @@ export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiec
               // 3. It's the source of the drag (gold border)
               const showGoldBorder = isDragSource || (isValidHovered);
 
+              // 4. It's a mandatory jump source (new highlight)
+              const isForcedJumpSource = forcedJumpPositions.has(`${rowIndex},${colIndex}`);
+
               // Check if this square is part of the last AI move
               const isAIMoveSquare = lastAIMove && (
                 (lastAIMove.from.row === rowIndex && lastAIMove.from.col === colIndex) ||
@@ -419,6 +483,7 @@ export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiec
                   ${isAITrailStart ? 'ai-trail-start' : ''}
                   ${isAITrailCaptured ? 'ai-trail-captured' : ''}
                   ${isAITrailLanding ? 'ai-trail-landing' : ''}
+                  ${isForcedJumpSource && !isSelected ? 'jump-available' : ''}
                 `}
                   onClick={() => onTileClick(rowIndex, colIndex)}
                   onDragOver={(e) => onDragOver(e, rowIndex, colIndex)}
@@ -435,10 +500,10 @@ export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiec
                     <div
                       className="trail-path-overlay"
                       style={{
-                        backgroundImage: stackedGradients,
-                        backgroundSize: stackedSizes,
-                        backgroundPosition: stackedPositions
-                      }}
+                        '--trail-gradients': stackedGradients,
+                        '--trail-sizes': stackedSizes,
+                        '--trail-positions': stackedPositions
+                      } as React.CSSProperties}
                     />
                   )}
                   {/* Highlight marker for valid moves (either selected or hovered) handled by CSS ::after */}
@@ -464,6 +529,16 @@ export const Board: React.FC<BoardProps> = ({ gameState, onTileClick, onMovePiec
               );
             })
           )}
+          {activeEffects.map((effect, index) => (
+            <BattleEffects
+              key={`effect-${index}`}
+              {...effect}
+              onComplete={() => {
+                effect.onComplete?.();
+                setActiveEffects(prev => prev.filter((_, i) => i !== index));
+              }}
+            />
+          ))}
         </div>
         <AdvantageBar scores={gameState.scores} playerColor={playerColor} />
       </div>

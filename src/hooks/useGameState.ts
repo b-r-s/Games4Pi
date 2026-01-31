@@ -80,18 +80,21 @@ export const useGameState = (
     };
   });
 
-  /* 
-    This state locks a player into using a specific piece when they are in the 
-    middle of a multi-jump sequence. If you jump, and can jump again, you 
-    CANNOT switch pieces. 
-  */
   const [multiJumpSource, setMultiJumpSource] = useState<Position | null>(null);
+
+  // Ref to track latest state for async AI moves to prevent stale closures
+  const gameStateRef = useRef(gameState);
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
 
   // Simple toast message for showing "Jump is mandatory!" warnings.
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Track the toast timeout so we can clean it up properly
   const toastTimeoutRef = useRef<number | undefined>(undefined);
+  // Track the AI move timeout so we can clean it up properly
+  const aiTimeoutRef = useRef<number | undefined>(undefined);
 
   const showToast = useCallback((msg: string) => {
     // Clear any existing timeout to prevent memory leaks
@@ -176,6 +179,19 @@ export const useGameState = (
         false
       ).filter(m => m.isJump);
 
+      // Determine captured square for visual effect (even if turn continues)
+      let humanMoveEffect = undefined;
+      if (prevState.currentPlayer === 'red' && move.isJump) {
+        const midRow = (move.from.row + move.to.row) / 2;
+        const midCol = (move.from.col + move.to.col) / 2;
+        humanMoveEffect = {
+          from: move.from,
+          to: move.to,
+          capturedSquares: [{ row: midRow, col: midCol }],
+          timestamp: Date.now()
+        };
+      }
+
       // For multi-jump continuations, don't add to history yet
       return {
         ...prevState,
@@ -184,6 +200,7 @@ export const useGameState = (
         selectedPosition: lockPiece,
         validMoves: nextMoves,
         scores: updateScores(newBoard),
+        lastHumanMove: humanMoveEffect, // Trigger effect
       };
     } else {
       // Turn ends here - add to move history for beginner level only
@@ -211,11 +228,45 @@ export const useGameState = (
         }
       ] : prevState.moveHistory;
 
+      // Calculate captured squares for Human Move Effect
+      let humanMoveEffect = undefined;
+      // Only trigger if it was the Human (Red) player moving and it was a Jump
+      if (prevState.currentPlayer === 'red' && move.isJump) {
+        // Determine captured square(s)
+        // For a simple jump, it's the middle square
+        const captured: Position[] = [];
+        if (move.jumpSequence && move.jumpSequence.length > 0) {
+          // Reconstruct path for multi-jump to find all captures?
+          // Actually, processMoveExecution is called per-step for human?
+          // Wait, looking at handleTileClick/movePiece, they call executeMove which handles the immediate move.
+          // If it's a dragging move (single step or single jump).
+          // Human multi-jumps are typically separate moves in this logic unless chained immediately?
+          // The logic: "If keepTurn (multi-jump available), we return... else we finish turn."
+          // BUT, the move passed here IS the move just executed.
+          // If it was a jump, we want to show the explosion IMMEDIATELY, even if the turn continues.
+          // So we shouldn't rely on 'lastHumanMove' being part of the 'keepsTurn' state update too?
+          // Yes, visuals should happen regardless of turn ending.
+        }
+
+        // Simple single jump capture logic
+        const midRow = (move.from.row + move.to.row) / 2;
+        const midCol = (move.from.col + move.to.col) / 2;
+        captured.push({ row: midRow, col: midCol });
+
+        humanMoveEffect = {
+          from: move.from,
+          to: move.to,
+          capturedSquares: captured,
+          timestamp: Date.now()
+        };
+      }
+
+
       const newState = {
         ...prevState,
         board: newBoard,
         currentPlayer: nextPlayer,
-        selectedPosition: null,
+        selectedPosition: null, // Deselect after turn ends
         validMoves: [],
         winner: winner,
         scores: updateScores(newBoard),
@@ -226,6 +277,7 @@ export const useGameState = (
         },
         lastAIMove: undefined,
         lastUndoMove: undefined,
+        lastHumanMove: humanMoveEffect, // Update effect trigger
         moveHistory: newMoveHistory,
         moveCount: newMoveCount,
         isAiTurn: false,
@@ -237,8 +289,13 @@ export const useGameState = (
 
   // Trigger AI move directly - no useEffect needed
   const triggerAIMove = useCallback(() => {
+    // Clear any existing AI timeout to prevent overlapping moves or leaks
+    if (aiTimeoutRef.current) {
+      clearTimeout(aiTimeoutRef.current);
+    }
+
     // Add delay for human-like feel
-    setTimeout(() => {
+    aiTimeoutRef.current = window.setTimeout(async () => {
       // 1. Mark as processing
       setGameState(prev => {
         if (prev.currentPlayer !== 'black' || prev.gameMode !== 'PvAI' || prev.winner || prev.isAiTurn) {
@@ -247,9 +304,19 @@ export const useGameState = (
         return { ...prev, isAiTurn: true };
       });
 
-      // 2. Calculate the move outside the state updater
-      const currentBoard = gameState.board;
-      const aiMove = getBestMove(currentBoard, 'black', gameState.aiLevel);
+      // 2. Calculate the move outside the state updater (NOW ASYNC)
+      const currentBoard = gameStateRef.current.board;
+      const aiLevel = gameStateRef.current.aiLevel;
+
+      // Start a "Thinking" indicator timer for long moves
+      const thinkingToastId = window.setTimeout(() => {
+        showToast("AI is thinking...");
+      }, 2000);
+
+      const aiMove = await getBestMove(currentBoard, 'black', aiLevel);
+
+      // Clear thinking toast once thinking is done
+      window.clearTimeout(thinkingToastId);
 
       if (!aiMove) {
         setGameState(prev => ({ ...prev, winner: 'red', isAiTurn: false }));
@@ -270,22 +337,22 @@ export const useGameState = (
         const executeNextJump = () => {
           if (jumpIndex >= aiMove.jumpSequence!.length) {
             // All jumps complete
-            const finalElapsed = Date.now() - gameState.turnStartTime;
+            const finalElapsed = Date.now() - gameStateRef.current.turnStartTime;
             const winner = checkGameOver(iteratedBoard);
-            const newMoveCount = gameState.moveCount + 1;
+            const newMoveCount = gameStateRef.current.moveCount + 1;
 
             if (winner && onGameEnd) onGameEnd(winner, newMoveCount);
 
-            const newHistory = gameState.aiLevel === 'beginner' ? [
-              ...gameState.moveHistory,
+            const newHistory = gameStateRef.current.aiLevel === 'beginner' ? [
+              ...gameStateRef.current.moveHistory,
               {
                 move: aiMove,
                 boardBefore: currentBoard,
-                scoresBefore: gameState.scores,
+                scoresBefore: gameStateRef.current.scores,
                 playerBefore: 'black' as Player,
-                timeBefore: { turnStartTime: gameState.turnStartTime, totalTime: gameState.totalTime }
+                timeBefore: { turnStartTime: gameStateRef.current.turnStartTime, totalTime: gameStateRef.current.totalTime }
               }
-            ] : gameState.moveHistory;
+            ] : gameStateRef.current.moveHistory;
 
             setGameState(prev => ({
               ...prev,
@@ -315,7 +382,7 @@ export const useGameState = (
           capturedSquares.push({ row: jumpedRow, col: jumpedCol });
           landingSquares.push(landingPos);
 
-          const newBoard = [...iteratedBoard.map(row => [...row])];
+          const newBoard = [...iteratedBoard.map((row: (import('../types/game').Piece | null)[]) => [...row])];
           newBoard[landingPos.row][landingPos.col] = iteratedBoard[currentPos.row][currentPos.col];
           newBoard[currentPos.row][currentPos.col] = null;
           newBoard[jumpedRow][jumpedCol] = null;
@@ -344,11 +411,12 @@ export const useGameState = (
 
           currentPos = landingPos;
           jumpIndex++;
-          setTimeout(executeNextJump, 2000);
+          // Schedule next jump with tracking
+          aiTimeoutRef.current = window.setTimeout(executeNextJump, 2000);
         };
 
-        playAIMoveSound();
-        setTimeout(executeNextJump, 800);
+        // Start the sequence with tracking
+        aiTimeoutRef.current = window.setTimeout(executeNextJump, 800);
       } else {
         // Single move or single jump
         playAIMoveSound();
@@ -357,22 +425,22 @@ export const useGameState = (
         if (!currentBoard[aiMove.from.row][aiMove.from.col]?.isKing && movedPiece?.isKing) playKingSound();
         if (aiMove.isJump) playAIJumpSound();
 
-        const elapsed = Date.now() - gameState.turnStartTime;
+        const elapsed = Date.now() - gameStateRef.current.turnStartTime;
         const winner = checkGameOver(newBoard);
-        const newCount = gameState.moveCount + 1;
+        const newCount = gameStateRef.current.moveCount + 1;
 
         if (winner && onGameEnd) onGameEnd(winner, newCount);
 
-        const newHistory = gameState.aiLevel === 'beginner' ? [
-          ...gameState.moveHistory,
+        const newHistory = gameStateRef.current.aiLevel === 'beginner' ? [
+          ...gameStateRef.current.moveHistory,
           {
             move: aiMove,
             boardBefore: currentBoard,
-            scoresBefore: gameState.scores,
+            scoresBefore: gameStateRef.current.scores,
             playerBefore: 'black' as Player,
-            timeBefore: { turnStartTime: gameState.turnStartTime, totalTime: gameState.totalTime }
+            timeBefore: { turnStartTime: gameStateRef.current.turnStartTime, totalTime: gameStateRef.current.totalTime }
           }
-        ] : gameState.moveHistory;
+        ] : gameStateRef.current.moveHistory;
 
         const trail = aiMove.isJump && aiMove.jumpedPiece ? {
           startSquare: aiMove.from,
@@ -400,10 +468,9 @@ export const useGameState = (
         }));
       }
     }, 1000);
-  }, [getBestMove, updateScores, onGameEnd, gameState]);
+  }, [getBestMove, updateScores, onGameEnd]); // Removed gameState from dependencies
 
-  // Trigger AI move when it becomes AI's turn - this IS appropriate for useEffect
-  // because we're responding to the state changing to require AI action
+  // Trigger AI move when it becomes AI's turn
   useEffect(() => {
     if (
       gameState.currentPlayer === 'black' &&
@@ -413,6 +480,14 @@ export const useGameState = (
     ) {
       triggerAIMove();
     }
+
+    return () => {
+      // ONLY clear the AI timeout if we are actually leaving the AI's turn.
+      // This allows the AI to continue its move sequence even if the board re-renders.
+      if (aiTimeoutRef.current && gameStateRef.current.currentPlayer !== 'black') {
+        clearTimeout(aiTimeoutRef.current);
+      }
+    };
   }, [gameState.currentPlayer, gameState.gameMode, gameState.winner, gameState.isAiTurn, triggerAIMove]);
 
   /*

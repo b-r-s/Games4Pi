@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import './Sidebar.css';
+import { GameButton } from '../GameButton/GameButton';
 import type { AILevel, Player, PlayerColorTheme, BoardColorTheme } from '../../types/game';
 import type { ScoreBreakdown } from '../../utils/scoring';
 import type { GameSettings } from '../../hooks/useSettings';
 import { COLOR_THEME_LABELS, BOARD_THEME_LABELS, BOARD_COLOR_SCHEMES } from '../../utils/colorThemes';
+
+import { NeonColors } from '../../types/neon-hues';
 
 export interface SidebarProps {
   aiLevel: AILevel;
@@ -15,11 +18,13 @@ export interface SidebarProps {
   settings: GameSettings;
   onSettingsChange: (settings: Partial<GameSettings>) => void;
   showPlayAgain?: boolean;
-  onPlayAgain?: () => void;
+
   canUndo?: boolean;
   onUndo?: () => void;
   logo?: string;
   gameInProgress?: boolean;
+  onRestart?: () => void;
+  moveHistory?: import('../../types/game').MoveHistoryEntry[];
 }
 
 // Helper to format milliseconds to MM:SS
@@ -40,11 +45,13 @@ export function Sidebar({
   settings,
   onSettingsChange,
   showPlayAgain,
-  onPlayAgain,
+
   canUndo,
   onUndo,
   logo,
-  gameInProgress
+  gameInProgress,
+  onRestart,
+  moveHistory = []
 }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<'game' | 'settings' | 'colors' | 'board'>('game');
   const [currentMoveTime, setCurrentMoveTime] = useState(0);
@@ -81,9 +88,13 @@ export function Sidebar({
       name: 'Total',
       tooltip: 'Sum of Material, Power, and Strategy.',
     },
+    moves: {
+      name: 'Moves',
+      tooltip: 'Total number of moves made by this player.',
+    },
   } as const;
   type StatKey = keyof typeof STAT_LABELS;
-  const STAT_KEYS: StatKey[] = ['material', 'power', 'strategy', 'total'];
+  const STAT_KEYS: StatKey[] = ['material', 'power', 'strategy', 'moves', 'total'];
 
   // Map playerColor to emoji for display
   // No emoji needed, use CSS circle for color indicator
@@ -100,12 +111,14 @@ export function Sidebar({
     let label = '';
     let colorClassName = '';
     if (player === 'red') {
-      label = `${COLOR_THEME_LABELS[settings.playerColor].replace(/^[^ ]+ /, '')} (You)`; // Remove emoji from label
+      label = `${COLOR_THEME_LABELS[settings.playerColor].replace(/^[^ ]+ /, '')} (You)`;
       colorClassName = `color-indicator color-${settings.playerColor}`;
     } else {
       label = 'Black (AI)';
       colorClassName = 'color-indicator color-black';
     }
+
+    const playerMoves = moveHistory.filter(m => m.playerBefore === player).length;
 
     return (
       <div className={`player-score-card ${isActive ? 'active' : ''}`}>
@@ -118,15 +131,18 @@ export function Sidebar({
           </span>
         </div>
         <div className="sidebar-stat-breakdown">
-          {STAT_KEYS.map((key) => (
-            <div className="sidebar-stat" key={key}>
-              <span className="sidebar-stat-label tooltip-container">
-                {STAT_LABELS[key].name}
+          {STAT_KEYS.map((key) => {
+            const val = key === 'moves' ? playerMoves : score[key as keyof typeof score];
+            return (
+              <div className="sidebar-stat tooltip-container" key={key}>
+                <span className="sidebar-stat-label">
+                  {STAT_LABELS[key].name}
+                </span>
+                <span className="sidebar-stat-value">{val.toFixed(0)}</span>
                 <span className="sidebar-tooltip">{STAT_LABELS[key].tooltip}</span>
-              </span>
-              <span className="sidebar-stat-value">{score[key].toFixed(0)}</span>
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
         <div className="timer-row">
           <span>Move: {isActive ? formatTime(moveTime) : '--:--'}</span>
@@ -139,41 +155,33 @@ export function Sidebar({
   return (
     <div className="sidebar">
       {/* Tabs */}
-      <div className="sidebar-tabs" style={{ position: 'relative' }}>
-        <button
-          className={`sidebar-tab ${activeTab === 'game' ? 'active' : ''}`}
+      <div className="sidebar-tabs">
+        <GameButton
+          hue={NeonColors.Purple}
+          label='Stats'
           onClick={() => setActiveTab('game')}
-        >
-          Stats
-        </button>
-        <button
-          className={`sidebar-tab ${activeTab === 'settings' ? 'active' : ''}`}
+          className='tab-button'
+        />
+        <GameButton
+          hue={NeonColors.Purple}
+          label='AI'
           onClick={() => setActiveTab('settings')}
-        >
-          AI
-        </button>
-        <button
-          className={`sidebar-tab ${activeTab === 'colors' ? 'active' : ''}`}
+          className='tab-button'
+        />
+        <GameButton
+          hue={NeonColors.Purple}
+          label='Pieces'
           onClick={() => setActiveTab('colors')}
-        >
-          Pieces
-        </button>
-        <button
-          className={`sidebar-tab ${activeTab === 'board' ? 'active' : ''}`}
+          className='tab-button'
+        />
+        <GameButton
+          hue={NeonColors.Purple}
+          label='Board'
           onClick={() => setActiveTab('board')}
-        >
-          Board
-        </button>
+          className='tab-button'
+        />
 
-        {/* Play Again Overlay */}
-        {showPlayAgain && (
-          <button
-            className="play-again-overlay-btn"
-            onClick={onPlayAgain}
-          >
-            Play Again
-          </button>
-        )}
+
       </div>
 
       {/* Content */}
@@ -181,8 +189,23 @@ export function Sidebar({
         {activeTab === 'game' ? (
           <>
             <div className="sidebar-header-with-logo">
-              {logo && <img src={logo} alt="Checkers4Pi Logo" className="sidebar-logo" />}
-              <h2 className="sidebar-title">Current Match</h2>
+              <div className="sidebar-title-group">
+                {logo && <img src={logo} alt="Checkers4Pi Logo" className="sidebar-logo" />}
+                <h2 className="sidebar-title">Current Match</h2>
+              </div>
+              {gameInProgress && (
+                <div className="tooltip-container">
+                  <GameButton
+                    className="new-game-btn"
+                    label='New Game ?'
+                    onClick={onRestart}
+                    width={160}
+                    hue={NeonColors.Green}
+
+                  />
+                  <span className="sidebar-tooltip">Start a fresh match</span>
+                </div>
+              )}
             </div>
             <div className="match-stats-container">
               {renderPlayerScore('red')}
@@ -191,13 +214,15 @@ export function Sidebar({
 
             {/* Undo Move Button - Only for Beginner Level */}
             {canUndo && (
-              <button
-                className="undo-move-btn"
-                onClick={onUndo}
-                title="Undo the last move (both yours and AI's)"
-              >
-                ⟲ Undo Move
-              </button>
+              <div className="tooltip-container">
+                <button
+                  className="undo-move-btn"
+                  onClick={onUndo}
+                >
+                  ⟲ Undo Move
+                </button>
+                <span className="sidebar-tooltip">Undo the last move (both yours and AI's)</span>
+              </div>
             )}
           </>
         ) : activeTab === 'settings' ? (
@@ -205,22 +230,25 @@ export function Sidebar({
             <h2 className="sidebar-title">AI Difficulty</h2>
             <div className="settings-content">
               <button
-                className={`difficulty-btn ${aiLevel === 'beginner' ? 'active' : ''}`}
-                onClick={() => onAILevelChange('beginner')}
+                className={`difficulty-btn ${aiLevel === 'beginner' ? 'active' : ''} ${gameInProgress ? 'disabled' : ''}`}
+                onClick={() => !gameInProgress && onAILevelChange('beginner')}
+                disabled={gameInProgress}
               >
                 <span>🟢</span> Beginner
               </button>
 
               <button
-                className={`difficulty-btn ${aiLevel === 'intermediate' ? 'active' : ''}`}
-                onClick={() => onAILevelChange('intermediate')}
+                className={`difficulty-btn ${aiLevel === 'intermediate' ? 'active' : ''} ${gameInProgress ? 'disabled' : ''}`}
+                onClick={() => !gameInProgress && onAILevelChange('intermediate')}
+                disabled={gameInProgress}
               >
                 <span>🟡</span> Intermediate
               </button>
 
               <button
-                className={`difficulty-btn ${aiLevel === 'advanced' ? 'active' : ''}`}
-                onClick={() => onAILevelChange('advanced')}
+                className={`difficulty-btn ${aiLevel === 'advanced' ? 'active' : ''} ${gameInProgress ? 'disabled' : ''}`}
+                onClick={() => !gameInProgress && onAILevelChange('advanced')}
+                disabled={gameInProgress}
               >
                 <span>🔴</span> Advanced
               </button>
@@ -257,7 +285,8 @@ export function Sidebar({
                   className={`difficulty-btn color-btn ${settings.playerColor === color ? 'active' : ''}`}
                   onClick={() => onSettingsChange({ playerColor: color })}
                 >
-                  <span className={`color-indicator color-${color}`}></span>
+                  {/* <span className={`color-indicator color-${color}`}></span> */}
+                  <div className="color-indicator" style={{ backgroundColor: color, height: '20px', width: '20px', border: '2px solid black', borderRadius: '50%' }}></div>
                   {color.charAt(0).toUpperCase() + color.slice(1)}
                   {color === 'red' && ' (Classic)'}
                 </button>
@@ -282,10 +311,16 @@ export function Sidebar({
                     className={`difficulty-btn color-btn ${settings.boardColors === theme ? 'active' : ''}`}
                     onClick={() => onSettingsChange({ boardColors: theme })}
                   >
-                    <span className="board-color-indicator">
-                      <span className="board-color-circle" style={{ background: colors.light }}></span>
-                      <span className="board-color-circle" style={{ background: colors.dark }}></span>
-                    </span>
+                    <div className="board-color-indicator">
+                      <div
+                        className="board-color-circle"
+                        style={{ '--circle-bg': colors.light } as React.CSSProperties}
+                      ></div>
+                      <div
+                        className="board-color-circle"
+                        style={{ '--circle-bg': colors.dark } as React.CSSProperties}
+                      ></div>
+                    </div>
                     {BOARD_THEME_LABELS[theme]}
                   </button>
                 );

@@ -88,6 +88,12 @@ export interface GameState {
     to: Position;
     timestamp: number;
   };
+  lastHumanMove?: {
+    from: Position;
+    to: Position;
+    capturedSquares: Position[];
+    timestamp: number;
+  };
   moveHistory: MoveHistoryEntry[];
   moveCount: number;
 }

@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 
+
 # Environment variables
 .env
 .env.local
@@ -27,3 +28,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Application files
+/keep-these-files/

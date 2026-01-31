@@ -42,27 +42,28 @@ export const useAIPlayer = ({ gameState, onStateUpdate, onGameEnd }: AIPlayerOpt
       onStateUpdate(prev => ({ ...prev, isAiTurn: true }));
 
       // Add a delay to make AI feel more human-like
-      const timer = setTimeout(() => {
-        // Use functional update to always get the freshest state
-        onStateUpdate(prev => {
-          const aiMove = getBestMove(prev.board, 'black', prev.aiLevel);
+      const timer = setTimeout(async () => {
+        // Fetch the best move asynchronously before updating state
+        const aiMove = await getBestMove(gameState.board, 'black', gameState.aiLevel);
 
-          if (!aiMove) {
-            // No valid moves - player wins
-            processingRef.current = false;
-            return { ...prev, winner: 'red', isAiTurn: false };
-          }
+        if (!aiMove) {
+          // No valid moves - player wins
+          onStateUpdate(prev => ({ ...prev, winner: 'red', isAiTurn: false }));
+          processingRef.current = false;
+          return;
+        }
 
-          // Check if this is a multi-jump sequence
-          if (aiMove.isJump && aiMove.jumpSequence && aiMove.jumpSequence.length > 1) {
-            // Handle multi-jump: animate each jump sequentially
-            let currentBoard = prev.board;
-            let currentPos = aiMove.from;
-            let jumpIndex = 0;
+        // Check if this is a multi-jump sequence
+        if (aiMove.isJump && aiMove.jumpSequence && aiMove.jumpSequence.length > 1) {
+          // Handle multi-jump: animate each jump sequentially
+          let currentBoard = gameState.board;
+          let currentPos = aiMove.from;
+          let jumpIndex = 0;
 
-            const executeNextJump = () => {
-              if (jumpIndex >= aiMove.jumpSequence!.length) {
-                // All jumps complete, finalize the turn
+          const executeNextJump = () => {
+            if (jumpIndex >= aiMove.jumpSequence!.length) {
+              // All jumps complete, finalize the turn
+              onStateUpdate(prev => {
                 const elapsed = Date.now() - prev.turnStartTime;
                 const winner = checkGameOver(currentBoard);
                 const newMoveCount = prev.moveCount + 1;
@@ -87,8 +88,8 @@ export const useAIPlayer = ({ gameState, onStateUpdate, onGameEnd }: AIPlayerOpt
                   }
                 ] : prev.moveHistory;
 
-                onStateUpdate(prevState => ({
-                  ...prevState,
+                return {
+                  ...prev,
                   board: currentBoard,
                   currentPlayer: 'red',
                   isAiTurn: false,
@@ -97,75 +98,74 @@ export const useAIPlayer = ({ gameState, onStateUpdate, onGameEnd }: AIPlayerOpt
                   winner: winner,
                   scores: updateScores(currentBoard),
                   turnStartTime: Date.now(),
-                  totalTime: { ...prevState.totalTime, black: prevState.totalTime.black + elapsed },
+                  totalTime: { ...prev.totalTime, black: prev.totalTime.black + elapsed },
                   lastAIMove: undefined,
                   moveHistory: newMoveHistory,
                   moveCount: newMoveCount,
-                }));
-                processingRef.current = false;
-                return;
+                };
+              });
+              processingRef.current = false;
+              return;
+            }
+
+            const landingPos = aiMove.jumpSequence![jumpIndex];
+
+            // Calculate the jumped piece position
+            const jumpedRow = (currentPos.row + landingPos.row) / 2;
+            const jumpedCol = (currentPos.col + landingPos.col) / 2;
+
+            // Execute this single jump
+            const newBoard = currentBoard.map(r => [...r]);
+            const piece = { ...newBoard[currentPos.row][currentPos.col]! };
+
+            // Remove jumped piece
+            newBoard[jumpedRow][jumpedCol] = null;
+
+            // Move the piece
+            newBoard[landingPos.row][landingPos.col] = piece;
+            newBoard[currentPos.row][currentPos.col] = null;
+
+            // Check for king promotion
+            if (!piece.isKing) {
+              if (piece.color === 'black' && landingPos.row === 7) {
+                piece.isKing = true;
+                newBoard[landingPos.row][landingPos.col] = piece;
+                playKingSound();
               }
+            }
 
-              const landingPos = aiMove.jumpSequence![jumpIndex];
+            // Play AI jump sound
+            playAIJumpSound();
 
-              // Calculate the jumped piece position
-              const jumpedRow = (currentPos.row + landingPos.row) / 2;
-              const jumpedCol = (currentPos.col + landingPos.col) / 2;
-
-              // Execute this single jump
-              const newBoard = currentBoard.map(r => [...r]);
-              const piece = { ...newBoard[currentPos.row][currentPos.col]! };
-
-              // Remove jumped piece
-              newBoard[jumpedRow][jumpedCol] = null;
-
-              // Move the piece
-              newBoard[landingPos.row][landingPos.col] = piece;
-              newBoard[currentPos.row][currentPos.col] = null;
-
-              // Check for king promotion
-              if (!piece.isKing) {
-                if (piece.color === 'black' && landingPos.row === 7) {
-                  piece.isKing = true;
-                  newBoard[landingPos.row][landingPos.col] = piece;
-                  playKingSound();
-                }
+            // Update state with this jump and show highlight
+            currentBoard = newBoard;
+            onStateUpdate(prevState => ({
+              ...prevState,
+              board: currentBoard,
+              scores: updateScores(currentBoard),
+              lastAIMove: {
+                from: currentPos,
+                to: landingPos,
+                timestamp: Date.now()
               }
+            }));
 
-              // Play AI jump sound
-              playAIJumpSound();
+            currentPos = landingPos;
+            jumpIndex++;
 
-              // Update state with this jump and show highlight
-              currentBoard = newBoard;
-              onStateUpdate(prevState => ({
-                ...prevState,
-                board: currentBoard,
-                scores: updateScores(currentBoard),
-                lastAIMove: {
-                  from: currentPos,
-                  to: landingPos,
-                  timestamp: Date.now()
-                }
-              }));
+            // Schedule next jump after delay
+            setTimeout(executeNextJump, 2500);
+          };
 
-              currentPos = landingPos;
-              jumpIndex++;
+          // Start the jump sequence
+          executeNextJump();
 
-              // Schedule next jump after delay
-              setTimeout(executeNextJump, 1800);
-            };
+        } else {
+          // Single move or single jump - execute immediately
+          if (aiMove.isJump) playAIJumpSound();
+          else playAIMoveSound();
 
-            // Start the jump sequence
-            executeNextJump();
-
-            // Return current state (will be updated by executeNextJump)
-            return prev;
-
-          } else {
-            // Single move or single jump - execute immediately
-            if (aiMove.isJump) playAIJumpSound();
-            else playAIMoveSound();
-
+          onStateUpdate(prev => {
             const newBoard = executeMove(prev.board, aiMove);
 
             // Check for king promotion
@@ -217,11 +217,10 @@ export const useAIPlayer = ({ gameState, onStateUpdate, onGameEnd }: AIPlayerOpt
               moveHistory: newMoveHistory,
               moveCount: newMoveCount,
             };
-          }
-        });
-        processingRef.current = false;
-      }, 1000);
-
+          });
+          processingRef.current = false;
+        }
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [gameState.currentPlayer, gameState.gameMode, gameState.winner, gameState.isAiTurn, getBestMove, onStateUpdate, onGameEnd, updateScores]);

@@ -8,9 +8,9 @@ export const COLOR_THEMES: Record<PlayerColorTheme, ColorFilter> = {
     brightness: 1,
   },
   blue: {
-hueRotate: 219, 
-saturate: 5, 
-brightness: 0.7,
+    hueRotate: 219,
+    saturate: 5,
+    brightness: 0.7,
   },
   green: {
     hueRotate: 83,
@@ -18,7 +18,7 @@ brightness: 0.7,
     brightness: 1.2,
   },
 
- 
+
   purple: {
     hueRotate: 270,
     saturate: 1.4,

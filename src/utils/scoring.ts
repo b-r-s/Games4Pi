@@ -110,9 +110,9 @@ export const calculateScore = (board: BoardState, player: Player): ScoreBreakdow
   }
 
   return {
-    material: Number(material.toFixed(1)),
-    power: Number(power.toFixed(1)),
-    strategy: Number(strategy.toFixed(1)),
-    total: Number((material + power + strategy).toFixed(1))
+    material: Math.floor(material),
+    power: Math.floor(power),
+    strategy: Math.floor(strategy),
+    total: Math.floor(material + power + strategy)
   };
 };

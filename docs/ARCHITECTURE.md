@@ -70,7 +70,7 @@ checkers4pi/
 - Multi-jump sequences
 - King promotions
 - Real-time scoring
-- Sound effects
+- Sound and Visual effects
 
 ## Technology Stack
 

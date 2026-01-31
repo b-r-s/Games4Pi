@@ -25,7 +25,7 @@ export const AdvantageBar: React.FC<AdvantageBarProps> = ({ scores, playerColor 
   const blackTotal = scores.black.total;
   const totalScore = redTotal + blackTotal;
   const redPercentage = totalScore > 0 ? (redTotal / totalScore) * 100 : 50;
-  
+
   // Calculate score difference to show who's ahead
   const scoreDiff = Math.abs(redTotal - blackTotal);
   const leader = redTotal > blackTotal ? 'red' : blackTotal > redTotal ? 'black' : 'even';
@@ -35,26 +35,26 @@ export const AdvantageBar: React.FC<AdvantageBarProps> = ({ scores, playerColor 
   return (
     <div className="advantage-bar-container">
       <div className="advantage-bar">
-        <div 
-          className="advantage-fill-red" 
-          style={{ 
-            height: `${redPercentage}%`,
-            background: `linear-gradient(to bottom, ${playerColors.light} 0%, ${playerColors.dark} 50%, ${playerColors.light} 100%)`,
-          }}
+        <div
+          className="advantage-fill-red"
+          style={{
+            '--fill-height': `${redPercentage}%`,
+            '--fill-bg': `linear-gradient(to bottom, ${playerColors.light} 0%, ${playerColors.dark} 50%, ${playerColors.light} 100%)`,
+          } as React.CSSProperties}
         />
-        <div 
-          className="advantage-fill-black" 
-          style={{ height: `${100 - redPercentage}%` }}
+        <div
+          className="advantage-fill-black"
+          style={{ '--fill-height': `${100 - redPercentage}%` } as React.CSSProperties}
         />
       </div>
-      
+
       {leader !== 'even' && (
-        <div 
+        <div
           className={`advantage-indicator ${leader}`}
           style={leader === 'red' ? {
-            borderColor: playerColors.dark,
-            color: playerColors.border,
-          } : undefined}
+            '--indicator-border': playerColors.dark,
+            '--indicator-color': playerColors.border,
+          } as React.CSSProperties : undefined}
         >
           {scoreDiff > 0 && `+${Math.round(scoreDiff)}`}
         </div>
