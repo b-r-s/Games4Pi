@@ -159,8 +159,10 @@ code {
     display: flex !important;
   }
 
-  /* Hide the actual game to prevent interaction */
-  .game-layout {
+  /* Hide the actual UI to prevent interaction and visual clutter behind the warning */
+  .game-layout,
+  .splash-wrapper,
+  .gameplay-instructions-container {
     display: none !important;
   }
 }

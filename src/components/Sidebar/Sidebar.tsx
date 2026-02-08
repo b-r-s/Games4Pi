@@ -129,6 +129,18 @@ export function Sidebar({
             {isAI && <span className="ai-difficulty-label"> {aiLevel.charAt(0).toUpperCase() + aiLevel.slice(1)}</span >}
             {isActive && <span className="animate-pulse">⏱️</span>}
           </span>
+          {/* Undo Move Button - Only for Beginner Level */}
+          {canUndo && player === 'red' && (
+            <div className="tooltip-container">
+              <button
+                className="undo-move-btn"
+                onClick={onUndo}
+              >
+                Undo Move
+              </button>
+              <span className="sidebar-tooltip">Undo the last move (both yours and AI's)</span>
+            </div>
+          )}
         </div>
         <div className="sidebar-stat-breakdown">
           {STAT_KEYS.map((key) => {
@@ -216,18 +228,7 @@ export function Sidebar({
               {renderPlayerScore('black')}
             </div>
 
-            {/* Undo Move Button - Only for Beginner Level */}
-            {canUndo && (
-              <div className="tooltip-container">
-                <button
-                  className="undo-move-btn"
-                  onClick={onUndo}
-                >
-                  ⟲ Undo Move
-                </button>
-                <span className="sidebar-tooltip">Undo the last move (both yours and AI's)</span>
-              </div>
-            )}
+
           </>
         ) : activeTab === 'settings' ? (
           <>

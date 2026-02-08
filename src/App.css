@@ -150,3 +150,77 @@
 .welcome-button:active {
   transform: translateY(0);
 }
+
+/* Authentication & Loading States */
+.app-container.loading,
+.app-container.error {
+  justify-content: center;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.loading-content,
+.auth-error-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  max-width: 400px;
+  padding: 2rem;
+}
+
+.loading-logo,
+.error-logo {
+  width: 96px;
+  height: 96px;
+  filter: drop-shadow(0 0 10px rgba(194, 141, 237, 0.3));
+}
+
+.loading-text {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--bg-light);
+}
+
+.error-badge {
+  color: var(--bg-light);
+  outline: 1px solid white;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.auth-error-content h1 {
+  font-size: 1.75rem;
+  margin-top: 0.5rem;
+}
+
+.error-detail {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+button.welcome-button {
+  background-color: var(--bg-medium);
+  color: white;
+  border: 1px solid var(--bg-light);
+  margin-top: 1rem;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

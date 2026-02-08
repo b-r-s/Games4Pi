@@ -17,8 +17,8 @@
 .sidebar {
   background-color: var(--bg-medium);
   border-radius: var(--radius-lg);
-  padding: 0.4rem;
-  margin-top: 0.5vh;
+  /* padding: 0.4rem;
+  margin-top: 0.5vh; */
   width: 100%;
   box-sizing: border-box;
   max-height: 55vh;
@@ -26,7 +26,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  gap: 0.4rem;
+  /* gap: 0.4rem; */
   border: 1px solid var(--accent-dark);
 }
 
@@ -123,7 +123,8 @@
 .match-stats-container {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  /* overflow: hidden; */
+  /* gap: 0.4rem; */
 }
 
 .player-score-card {
@@ -131,6 +132,7 @@
   border-radius: var(--radius-md);
   transition: all 0.3s ease;
   margin-bottom: 0.4rem;
+  overflow-x: hidden;
 }
 
 .player-score-card.active {
@@ -148,7 +150,8 @@
 
 .player-name {
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: 1rem;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 0.3rem;
@@ -171,13 +174,13 @@
 }
 
 .sidebar-stat-label {
-  font-size: 0.75rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .sidebar-stat-value {
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: bold;
   color: var(--text-primary);
   background: var(--bg-dark);
@@ -190,9 +193,19 @@
 .timer-row {
   display: flex;
   justify-content: space-between;
-  font-size: 0.6rem;
+  font-size: 1rem;
   color: var(--text-primary);
   font-family: monospace;
+}
+
+button.game-button.tab-button {
+  height: 34px !important;
+  font-size: 1rem !important;
+}
+
+button.game-button.new-game-btn {
+  width: 120px !important;
+  height: 34px !important;
 }
 
 .difficulty-btn {
@@ -204,7 +217,7 @@
   align-items: center;
   gap: 0.4rem;
   transition: all 0.2s;
-  font-size: 0.7rem;
+  font-size: 1rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
 }
@@ -217,7 +230,7 @@
 }
 
 .difficulty-desc {
-  font-size: 0.6rem;
+  font-size: 1rem;
   color: var(--text-primary);
   margin-top: 0.5rem;
   text-align: center;
@@ -252,7 +265,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.8rem;
+  font-size: 1rem;
   padding: 0.5rem 0.6rem;
   border-radius: var(--radius-md);
   margin-top: 0.5rem;
@@ -277,16 +290,21 @@
 }
 
 .ai-first-toggle .toggle-hint {
-  font-size: 0.7rem;
+  font-size: 1rem;
   opacity: 0.7;
   font-style: italic;
 }
 
 /* Undo Move Button */
 .undo-move-btn {
-  width: 100%;
-  padding: 0.75rem;
-  margin-top: 1rem;
+  width: 80%;
+  background-color: var(--bg-dark);
+  border-color: var(--border-dark);
+  color: var(--text-primary);
+  padding: .35rem 0 .35rem 0;
+  margin-top: 0.5rem;
+  margin-right: 2rem;
+  margin-left: 1rem;
   border-radius: var(--radius-md);
   font-size: 0.9rem;
   font-weight: 600;
@@ -306,7 +324,7 @@
 .btn-new-game-mini {
   padding: 0.35rem 0.6rem;
   border-radius: var(--radius-sm);
-  font-size: 0.7rem;
+  font-size: 1rem;
   font-weight: 800;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -359,15 +377,10 @@
   }
 
   .sidebar-title {
-    font-size: 0.9rem;
-    /* Tablet nudge as requested */
+    font-size: 1rem;
     padding-left: 3vw;
     text-align: center;
     position: relative;
-  }
-
-  .player-score-card {
-    padding: 0.75rem;
   }
 
   .player-name {
@@ -385,7 +398,7 @@
   }
 
   .sidebar-stat-label {
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
 
   .sidebar-stat-value {
@@ -395,16 +408,16 @@
   }
 
   .timer-row {
-    font-size: 0.65rem;
+    font-size: 1rem;
   }
 
   .difficulty-btn {
     padding: 0.6rem;
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
 
   .difficulty-desc {
-    font-size: 0.7rem;
+    font-size: 1rem;
   }
 
   .settings-content {
@@ -433,7 +446,7 @@
   }
 
   .tab-button {
-    font-size: 0.95rem !important;
+    font-size: 1rem !important;
   }
 }
 
@@ -462,7 +475,7 @@
   left: 50%;
   bottom: 125%;
   transform: translateX(-50%);
-  font-size: 0.75rem;
+  font-size: 1rem;
   line-height: 1.2;
   pointer-events: none;
   transition: opacity 0.15s, transform 0.15s;

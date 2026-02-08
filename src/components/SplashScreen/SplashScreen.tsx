@@ -24,7 +24,7 @@ export function SplashScreen({ onStart, onShowInstructions }: SplashScreenProps)
             opacity={0.7}
             hue={NeonColors.Green}
             onClick={onStart}
-            fontSize="1.8rem"
+            fontSize="1.2rem"
           />
 
           <GameButton
@@ -36,7 +36,7 @@ export function SplashScreen({ onStart, onShowInstructions }: SplashScreenProps)
             height={50}
             padding={5}
             onClick={onShowInstructions}
-            fontSize="1.8rem"
+            fontSize="1.2rem"
           />
         </div>
       </div>

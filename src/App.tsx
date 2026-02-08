@@ -14,6 +14,18 @@ import logo from './assets/icon-192x192.png';
 
 
 
+
+// Internal component for the orientation warning to avoid duplication
+const LandscapeWarning = ({ logo }: { logo: string }) => (
+  <div className="landscape-warning">
+    <div className="warning-content">
+      <img src={logo} alt="Checkers4Pi Logo" className="rotate-icon-img" />
+      <h2>Please Rotate Your Device</h2>
+      <p>Checkers4Pi is designed for Portrait Mode.</p>
+    </div>
+  </div>
+);
+
 function App() {
   // DEV-ONLY: Preview authentication screens for styling
   // To use: add ?previewAuth=checking or ?previewAuth=failed to your local URL
@@ -97,120 +109,98 @@ function App() {
   }, [settings.boardColors]);
 
 
-  // DEV-ONLY: Preview authentication screens for styling
-  if (previewAuth === 'checking') {
+  // --- MAIN RENDER LOGIC ---
+
+  // 1. Handle loading state (auth not yet checked)
+  if (!authChecked && previewAuth !== 'checking' && previewAuth !== 'failed') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100svh', color: 'white' }}>
-        <img src={logo} alt="Checkers4Pi" style={{ width: 96, height: 96, marginBottom: 24 }} />
-        <div>Connecting to Pi Ecosystem...</div>
-      </div>
-    );
-  }
-  if (previewAuth === 'failed') {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100svh' }}>
-        <img src={logo} alt="Checkers4Pi" style={{ width: 96, height: 96, marginBottom: 24 }} />
-        <div style={{ color: '#c28ded', outline: '1px solid white', marginBottom: 12, padding: '5px 10px' }}>Authentication failed.</div>
-        <div style={{ maxWidth: 320, textAlign: 'center', color: 'white' }}>
-          This app requires the Pi Network SDK.<br />
-          Please open in the Pi Browser or use the Pi Developer Portal sandbox for full functionality.
-        </div>
-        <div className="retry">
-          <button
-            onClick={() => window.location.reload()}
-            style={{ marginTop: '20px', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}
-          >
-            Retry Connection
-          </button>
+      <div className="app-container loading">
+        <LandscapeWarning logo={logo} />
+        <div className="loading-content">
+          <img src={logo} alt="Checkers4Pi" className="loading-logo" />
+          <div className="loading-text animate-pulse">Connecting to Pi Ecosystem...</div>
         </div>
       </div>
     );
   }
 
-  // Show authentication/fallback message if not authenticated
-  if (!authChecked) {
+  // 2. Handle specific preview or error states
+  const currentError = previewAuth === 'failed' ? 'Authentication failed.' : authError;
+  const isCheckingPreview = previewAuth === 'checking';
+
+  if (currentError || isCheckingPreview) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100svh' }}>
-        <img src={logo} alt="Checkers4Pi" style={{ width: 96, height: 96, marginBottom: 24 }} />
-        <div>Connecting to Pi Ecosystem......</div>
+      <div className="app-container error">
+        <LandscapeWarning logo={logo} />
+        <div className="auth-error-content">
+          <img src={logo} alt="Checkers4Pi" className="error-logo" />
+          {isCheckingPreview ? (
+            <div className="loading-text">Connecting to Pi Ecosystem...</div>
+          ) : (
+            <>
+              <div className="error-badge">{currentError}</div>
+              <h1>Initialization Failed</h1>
+              <p className="error-detail">
+                This app requires the Pi Network SDK.<br />
+                Please open in the Pi Browser or use the Pi Developer Portal sandbox for full functionality.
+              </p>
+              <button className="welcome-button" onClick={() => window.location.reload()}>
+                Retry Connection
+              </button>
+            </>
+          )}
+        </div>
       </div>
     );
   }
 
-  // Current production error block (bottom of file)
-  if (authError) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100svh' }}>
-        <img src={logo} alt="Checkers4Pi" style={{ width: 96, height: 96, marginBottom: 24 }} />
-        {/* Updated to match your refined failure screen */}
-        <div style={{ color: '#c28ded', outline: '1px solid white', marginBottom: 12, padding: '5px 10px' }}>
-          {authError}
-        </div>
-        <div style={{ maxWidth: 320, textAlign: 'center', color: 'white' }}>
-          This app requires the Pi Network SDK.<br />
-          Please open in the Pi Browser or use the Pi Developer Portal sandbox for full functionality.
-        </div>
-        <button onClick={() => window.location.reload()} style={{ marginTop: '20px', padding: '10px 20px', borderRadius: '8px' }}>
-          Retry Connection ?
-        </button>
-      </div>
-    );
-  }
-
-  if (showSplash) {
-    if (showInstructions) {
-      return (
-        <GamePlayInstructions onBack={handleHideInstructions} />
-      );
-    }
-    return <SplashScreen onStart={handleStartGame} onShowInstructions={handleShowInstructions} />;
-  }
-
+  // 3. Main Application Flow (Splash -> Game)
   return (
     <div className="app-container">
-      {/* Landscape Warning Overlay */}
-      <div className="landscape-warning">
-        <div className="warning-content">
-          <img src={logo} alt="Checkers4Pi Logo" className="rotate-icon-img" />
-          <h2>Please Rotate Your Device</h2>
-          <p>Checkers4Pi is designed for Portrait Mode.</p>
-        </div>
-      </div>
+      <LandscapeWarning logo={logo} />
 
-      <div className="game-layout">
-        <div className="main-content">
-          <Board
-            gameState={gameState}
-            onTileClick={handleTileClick}
-            onMovePiece={movePiece}
+      {showSplash ? (
+        showInstructions ? (
+          <GamePlayInstructions onBack={handleHideInstructions} />
+        ) : (
+          <SplashScreen onStart={handleStartGame} onShowInstructions={handleShowInstructions} />
+        )
+      ) : (
+        <div className="game-layout">
+          <div className="main-content">
+            <Board
+              gameState={gameState}
+              onTileClick={handleTileClick}
+              onMovePiece={movePiece}
+              onRestart={handleRestart}
+              onClearUndoHighlight={clearUndoHighlight}
+              toastMessage={toastMessage}
+              playerColor={settings.playerColor}
+              onModalFadeComplete={() => setShowPlayAgain(true)}
+            />
+          </div>
+          <Sidebar
+            aiLevel={gameState.aiLevel}
+            onAILevelChange={setAILevel}
+            scores={gameState.scores}
+            currentPlayer={gameState.currentPlayer}
+            turnStartTime={gameState.turnStartTime}
+            totalTime={gameState.totalTime}
+            settings={settings}
+            onSettingsChange={updateSettings}
+            showPlayAgain={showPlayAgain}
             onRestart={handleRestart}
-            onClearUndoHighlight={clearUndoHighlight}
-            toastMessage={toastMessage}
-            playerColor={settings.playerColor}
-            onModalFadeComplete={() => setShowPlayAgain(true)}
+            moveHistory={gameState.moveHistory}
+            canUndo={gameState.aiLevel === 'beginner' && gameState.moveHistory.length >= 2 && !gameState.isAiTurn && !gameState.winner}
+            onUndo={undoMove}
+            logo={logo}
+            gameInProgress={gameState.moveCount > 0}
           />
         </div>
-        <Sidebar
-          aiLevel={gameState.aiLevel}
-          onAILevelChange={setAILevel}
-          scores={gameState.scores}
-          currentPlayer={gameState.currentPlayer}
-          turnStartTime={gameState.turnStartTime}
-          totalTime={gameState.totalTime}
-          settings={settings}
-          onSettingsChange={updateSettings}
-          showPlayAgain={showPlayAgain}
-
-          onRestart={handleRestart}
-          moveHistory={gameState.moveHistory}
-          canUndo={gameState.aiLevel === 'beginner' && gameState.moveHistory.length >= 2 && !gameState.isAiTurn && !gameState.winner}
-          onUndo={undoMove}
-          logo={logo}
-          gameInProgress={gameState.moveCount > 0}
-        />
-      </div>
+      )}
     </div>
   );
 }
+
 
 export default App;
