@@ -1,6 +1,5 @@
 ﻿import { useState, useMemo, useEffect } from 'react';
 import { PiNetworkClient } from '@xhilo/pi-sdk';
-import { createRealPaymentCallbacks } from './piNetworkCallbacks';
 
 // Type definitions for Pi Network SDK alignment
 interface PiUser {
@@ -11,7 +10,6 @@ interface PiUser {
 export const usePiNetwork = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<PiUser | null>(null);
-  const [currentPayment, setCurrentPayment] = useState<string | null>(null);
 
   // Initialize Pi SDK instance
   const pi = useMemo(() => {
@@ -34,7 +32,7 @@ export const usePiNetwork = () => {
   useEffect(() => {
     if (!pi) return;
 
-    pi.initialize().then((result) => {
+    pi.initialize().then((result: any) => {
       // Check if result exists and is successful
       if (result && result.success) {
         const currentUser = pi.getUser();
@@ -46,7 +44,7 @@ export const usePiNetwork = () => {
           });
         }
       }
-    }).catch((err) => {
+    }).catch((err: any) => {
       console.warn('Pi Initialization silent catch:', err);
     });
   }, [pi]);
@@ -55,8 +53,10 @@ export const usePiNetwork = () => {
     if (!pi) return;
 
     try {
-      const result = await pi.authenticate(['username', 'payments'], (payment) => {
-        console.log('Incomplete payment found:', payment);
+      // Simplified authentication: Only ask for 'username'
+      // We keep the empty callback () => {} because the SDK requires it
+      const result = await pi.authenticate(['username'], (_payment: any) => {
+        console.log('Sandbox safety check: No payment logic active.');
       });
 
       if (result && result.success && result.data) {
@@ -71,42 +71,10 @@ export const usePiNetwork = () => {
     }
   };
 
-  const createPayment = async (
-    amount: number,
-    memo: string,
-    metadata: Record<string, unknown> = {}
-  ): Promise<{ success: boolean; paymentId?: string; error?: string }> => {
-    if (!pi || !isAuthenticated) {
-      return { success: false, error: 'Not authenticated' };
-    }
-
-    return new Promise((resolve) => {
-      try {
-        const callbacks = createRealPaymentCallbacks(setCurrentPayment, resolve);
-
-        pi.createPayment(
-          {
-            amount,
-            memo,
-            metadata: {
-              ...metadata,
-              gameId: 'checkers4pi',
-            },
-          },
-          callbacks
-        );
-      } catch {
-        resolve({ success: false, error: 'Failed to create payment' });
-      }
-    });
-  };
-
   return {
     pi,
     isAuthenticated,
     user,
-    currentPayment,
     authenticate,
-    createPayment,
   };
 };

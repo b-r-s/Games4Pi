@@ -3,7 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import config from './config.js';
-import paymentsRouter from './routes/payments.js';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,7 +15,7 @@ app.use(cors());
 app.use(express.json());
 
 // API Routes
-app.use('/api/payments', paymentsRouter);
+
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -26,7 +26,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Serve static files from React build (production)
+// Serve static files from React build (production only)
 if (config.isProduction) {
   const distPath = path.join(__dirname, '../dist');
   app.use(express.static(distPath));
@@ -37,11 +37,15 @@ if (config.isProduction) {
   });
 }
 
-// Development mode message
+// Development and Local-Only Logic
+// We wrap the listener and dev-messages in one block so they NEVER run on Vercel
 if (config.isDevelopment) {
+  const PORT = config.PORT || 3000;
+
+  // Development welcome message API
   app.get('/', (req, res) => {
     res.json({
-      message: 'Checkers4Pi API Server',
+      message: 'Checkers4Pi API Server (Development Mode)',
       mode: 'development',
       note: 'Run "npm run dev" to start the Vite dev server for the frontend',
       apiEndpoints: {
@@ -52,28 +56,16 @@ if (config.isDevelopment) {
       },
     });
   });
-}
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  res.status(500).json({
-    error: 'Internal server error',
-    message: config.isDevelopment ? err.message : 'An error occurred',
-  });
-});
-
-// Start server
-const PORT = config.PORT;
-app.listen(PORT, () => {
-  console.log(`\n🚀 Checkers4Pi Server running on port ${PORT}`);
-  console.log(`   Environment: ${config.NODE_ENV}`);
-  console.log(`   Pi API configured: ${!!config.PI_API_KEY ? '✅' : '❌'}`);
-
-  if (config.isDevelopment) {
+  // Start server ONLY in development
+  app.listen(PORT, () => {
+    console.log(`\n🚀 Checkers4Pi Server running on port ${PORT}`);
+    console.log(`   Environment: ${config.NODE_ENV}`);
+    console.log(`   Pi API configured: ${!!config.PI_API_KEY ? '✅' : '❌'}`);
     console.log(`\n   API: http://localhost:${PORT}/api`);
     console.log(`   Frontend (Vite): Run "npm run dev" in another terminal\n`);
-  } else {
-    console.log(`\n   App: http://localhost:${PORT}\n`);
-  }
-});
+  });
+}
+
+// Export the app (Necessary for Vercel to turn this into a Serverless Function)
 export default app;

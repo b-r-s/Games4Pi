@@ -18,11 +18,15 @@
   ],
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "/Server/index.js"
+    },
+    {
       "source": "/validation-key.txt",
       "destination": "/validation-key.txt"
     },
     {
-      "source": "/((?!validation-key\\.txt).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
