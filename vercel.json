@@ -19,7 +19,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/Server/index.js"
+      "destination": "/api/index.js"
     },
     {
       "source": "/validation-key.txt",
