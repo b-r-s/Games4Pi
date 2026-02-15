@@ -14,7 +14,6 @@ app.use(express.json());
 app.get('/validation-key.txt', (req, res) => {
   const key = '6ea15fed2af1a0d886e63765a';
   res.set('Content-Type', 'text/plain; charset=utf-8');
-  res.set('Content-Disposition', 'inline');
   res.status(200).send(key);
 });
 app.get(['/api/health', '/health', '/'], (req, res) => {
