@@ -16,8 +16,10 @@ export const usePiNetwork = () => {
     try {
       // MANDATORY: Manually trigger the global Pi init for the Sandbox/Portal handshake
       if (typeof window !== 'undefined' && (window as any).Pi) {
-        (window as any).Pi.init({ version: "2.0", sandbox: true });
-        console.log("Pi SDK Global Init: Success (Sandbox Mode)");
+        // We initialize version 2.0. We don't force sandbox: true here
+        // to allow native Pi Browser auth to work without origin mismatches.
+        (window as any).Pi.init({ version: "2.0" });
+        console.log("Pi SDK Global Init: Success");
       }
 
       // Return the client wrapper
