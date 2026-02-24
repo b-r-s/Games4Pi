@@ -1,11 +1,15 @@
 import express from 'express';
 import cors from 'cors';
+import paymentsRouter from './routes/payments.js';
 
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Payment routes
+app.use('/api/payments', paymentsRouter);
 
 // API Routes - Self-Contained (No external config import for the check)
 

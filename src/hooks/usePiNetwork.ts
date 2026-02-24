@@ -87,12 +87,33 @@ export const usePiNetwork = () => {
         {
           onReadyForServerApproval: (paymentId: string) => {
             console.log('Payment ready for approval:', paymentId);
-            // For a simple tip, we approve immediately client-side
-            // In a full backend setup you would call your server here
+            const apiBase = import.meta.env.VITE_API_BASE_URL ?? '';
+            fetch(`${apiBase}/api/payments/approve`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentId }),
+            })
+              .then(r => r.json())
+              .then(data => console.log('Approval response:', data))
+              .catch(err => console.error('Approval fetch error:', err));
           },
           onReadyForServerCompletion: (paymentId: string, txid: string) => {
             console.log('Payment complete! paymentId:', paymentId, 'txid:', txid);
-            setPaymentStatus('success');
+            const apiBase = import.meta.env.VITE_API_BASE_URL ?? '';
+            fetch(`${apiBase}/api/payments/complete`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentId, txid }),
+            })
+              .then(r => r.json())
+              .then(data => {
+                console.log('Completion response:', data);
+                setPaymentStatus('success');
+              })
+              .catch(err => {
+                console.error('Completion fetch error:', err);
+                setPaymentStatus('error');
+              });
           },
           onCancel: (paymentId: string) => {
             console.log('Payment cancelled:', paymentId);
