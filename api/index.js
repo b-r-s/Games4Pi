@@ -26,7 +26,8 @@ app.get(['/api/health', '/health', '/'], (req, res) => {
     timestamp: new Date().toISOString(),
     message: 'Server is alive (Self-Contained Mode)',
     // We check process.env directly instead of using config.js
-    piConfigured: !!process.env.VITE_PI_API_KEY || !!process.env.PI_API_KEY
+    piConfigured: !!process.env.VITE_PI_API_KEY || !!process.env.PI_API_KEY,
+    piKeySource: process.env.PI_API_KEY ? 'PI_API_KEY' : process.env.VITE_PI_API_KEY ? 'VITE_PI_API_KEY' : 'none'
   });
 });
 
