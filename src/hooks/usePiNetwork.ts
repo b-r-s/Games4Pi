@@ -17,9 +17,22 @@ export const usePiNetwork = () => {
 
   const addLog = (msg: string) => {
     const ts = new Date().toISOString().slice(11, 23);
-    console.log(`[Pi ${ts}] ${msg}`);
-    setDebugLog(prev => [...prev.slice(-20), `${ts} ${msg}`]);
+    const line = `${ts} ${msg}`;
+    console.log(`[Pi] ${line}`);
+    setDebugLog(prev => {
+      const next = [...prev.slice(-20), line];
+      try { localStorage.setItem('pi_debug_log', JSON.stringify(next)); } catch (_) {}
+      return next;
+    });
   };
+
+  // Restore log from localStorage on mount (survives Pi Browser navigation away/back)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('pi_debug_log');
+      if (saved) setDebugLog(JSON.parse(saved));
+    } catch (_) {}
+  }, []);
 
   // Init Pi SDK on mount
   useEffect(() => {
@@ -109,6 +122,7 @@ export const usePiNetwork = () => {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ paymentId }),
+              keepalive: true,   // survives Pi Browser navigating away
             })
               .then(async r => {
                 const ms = Date.now() - t0;
@@ -167,6 +181,10 @@ export const usePiNetwork = () => {
     createPayment,
     paymentStatus,
     debugLog,
-    resetPaymentStatus: () => { setPaymentStatus('idle'); setDebugLog([]); },
+    resetPaymentStatus: () => {
+      setPaymentStatus('idle');
+      setDebugLog([]);
+      try { localStorage.removeItem('pi_debug_log'); } catch (_) {}
+    },
   };
 };
