@@ -19,18 +19,30 @@ export const usePiNetwork = () => {
     const ts = new Date().toISOString().slice(11, 23);
     const line = `${ts} ${msg}`;
     console.log(`[Pi] ${line}`);
-    setDebugLog(prev => {
-      const next = [...prev.slice(-20), line];
-      try { localStorage.setItem('pi_debug_log', JSON.stringify(next)); } catch (_) {}
-      return next;
-    });
+    // Write to localStorage SYNCHRONOUSLY — before React state update
+    // so it survives Pi Browser freezing the JS thread
+    try {
+      const existing: string[] = JSON.parse(localStorage.getItem('pi_debug_log') || '[]');
+      const next = [...existing.slice(-20), line];
+      localStorage.setItem('pi_debug_log', JSON.stringify(next));
+    } catch (_) {}
+    setDebugLog(prev => [...prev.slice(-20), line]);
   };
 
-  // Restore log from localStorage on mount (survives Pi Browser navigation away/back)
+  // Restore log + status from localStorage on mount (survives Pi Browser navigation away/back)
   useEffect(() => {
     try {
       const saved = localStorage.getItem('pi_debug_log');
-      if (saved) setDebugLog(JSON.parse(saved));
+      if (saved) {
+        const lines: string[] = JSON.parse(saved);
+        setDebugLog(lines);
+        // If the last log line shows we were mid-payment, restore pending state
+        // so the debug panel is visible when the app reloads
+        const last = lines[lines.length - 1] ?? '';
+        if (last.includes('sendBeacon') || last.includes('onReadyForServer') || last.includes('Calling Pi')) {
+          setPaymentStatus('pending');
+        }
+      }
     } catch (_) {}
   }, []);
 
